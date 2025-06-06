@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.JSInterop;
 
-namespace MaieBlazorLib.CopyPaste
+namespace MaieBlazorLib
 {
     public class CopyPasteApi
     {

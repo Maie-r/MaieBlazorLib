@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.JSInterop;
 
-namespace MaieBlazorLib.DragDrop
+namespace MaieBlazorLib
 {
     public class DragDropApi<T> // Done because using <T> in every method was bad for performance
     {
