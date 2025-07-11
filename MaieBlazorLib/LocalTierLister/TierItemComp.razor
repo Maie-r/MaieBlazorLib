@@ -12,7 +12,7 @@
 	}
 	else
 	{
-		<img src="@item.img" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall": "tieritem") rounded flex-fill m-1" @onerror="ImageFail"/>
+		<img src="@item.img" draggable="false" @ondragleave="OuttaHere" alt="@item.name" class="@(isminimal ? "tieritemsmall": "tieritem") rounded flex-fill m-1" @onerror="ImageFail" />
 	}
 </a>
 <script src="imageHandler.js"></script>
@@ -92,8 +92,9 @@
 		await OnItemOver.InvokeAsync(id);
 	}
 
-	void OuttaHere(MouseEventArgs e)
+	void OuttaHere()
 	{
+		Logger.LogInformation("AAAH ITS WORKING AGAIN"); // its not btw :(
 		OnItemOut.InvokeAsync();
 	}
 

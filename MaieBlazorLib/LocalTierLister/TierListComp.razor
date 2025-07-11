@@ -93,7 +93,12 @@
 								{
 									<MudTooltip class="col-2" Color="Color.Transparent">
 										<ChildContent>
-											<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" OnItemSelect="Select" OnItemDrag="StartDrag" OnItemDragStop="StopDrag" OnItemOver="OverHere" OnItemOut="OuttaHere"></TierItemComp>
+											<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" 
+											OnItemSelect="Select" 
+											OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, i)" 
+											OnItemDragStop="StopDrag" 
+											OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, i)" 
+											OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
 										</ChildContent>
 										<TooltipContent>
 											<div class="text-light darken-95 rounded p-3 m-0">
@@ -104,7 +109,12 @@
 								}
 								else
 								{
-									<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" OnItemSelect="Select" OnItemDrag="StartDrag" OnItemDragStop="StopDrag" OnItemOver="OverHere" OnItemOut="OuttaHere"></TierItemComp>
+									<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" 
+									OnItemSelect="Select" 
+									OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, i)" 
+									OnItemDragStop="StopDrag" 
+									OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, i)" 
+									OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
 								}
 							}
 						}
@@ -169,10 +179,8 @@
 	string temptiername = "";
 	ElementReference temptier;
 
-	string dragtier = ""; // which tier mouse is over
-	int dragover; // which item mouse is over
+	string overtier = ""; // which tier mouse is over
 	string draggedtier = ""; // which tier dragged item was from
-	int dragitem; // index of dragged item
 
 	void Toggle(ref bool thing)
 	{
@@ -306,6 +314,7 @@
 
 	void TrySave()
 	{
+		Logger.LogInformation("Saving!");
 		if (tl != null)
 			tl.SaveAll();
 		OnSave.InvokeAsync();
@@ -333,92 +342,45 @@
 		TrySave();
 	}
 
-	void StartDrag(TierItem s) // Characacter Draggin'
-	{
-		draggedtier = s.parent.ogname;
-		dragitem = selected.list[draggedtier].items.IndexOf(s);
-		Logger.LogInformation($"Started drag with {s.name} from tier {draggedtier} with id {dragitem}");
-	}
-
-	/*
-	void StartDrag(MouseEventArgs e, int chara, string key) // Characacter Draggin'
-		{
-		Logger.LogInformation($"Started drag with {selected.list[key].items[chara].name} from tier {key}! {e.Button}");
-		draggedtier = key;
-		dragitem = chara;
-	}*/
-
 	void StopDrag()
 	{
-		if (dragover >= 0)
+		if (overtier != "")
 		{
-			Logger.LogInformation($"{dragover} {dragitem}");
-			if (draggedtier != "" && dragtier != "")
+			if (DragDropApi<TierItem>.GetOver() == null)
 			{
-				try
-				{
-					if (selected.list[dragtier].items[dragover] != selected.list[draggedtier].items[dragitem])
-					{
-						Logger.LogInformation($"Switcheroo!");
-						TierItem temp = selected.list[draggedtier].items[dragitem];
-						temp.parent = selected.list[dragtier];
-						selected.list[draggedtier].items.RemoveAt(dragitem);
-						selected.list[dragtier].items.Insert(dragover, temp);
-						temp = null;
-						tl.SaveAll();
-					}
-				}
-				catch
-				{
-					Logger.LogInformation($"Switche2!");
-					TierItem temp = selected.list[draggedtier].items[dragitem];
-					temp.parent = selected.list[dragtier];
-					selected.list[draggedtier].items.RemoveAt(dragitem);
-					selected.list[dragtier].items.Add(temp);
-					temp = null;
-				}
-				dragover = -1;
-				dragitem = -1;
+				selected.list[overtier].items.Add(DragDropApi<TierItem>.GetDragged());
+				DragDropApi<TierItem>.GetDragged().parent = selected.list[overtier];
+			}
+			else 
+			{
+				var temp1 = DragDropApi<TierItem>.GetDragged();
+				var temp2 = DragDropApi<TierItem>.GetOver();
+				DragDropApi<TierItem>.StopDragInsert();
+				var temp3 = temp1.parent;
+				temp1.parent = temp2.parent;
+				temp2.parent = temp3;
 			}
 		}
-		else
+		else if (DragDropApi<TierItem>.StopDragInsert())
 		{
-			Logger.LogInformation($"Stopped drag!");
-			dragitem = -1;
-		}
-		StateHasChanged();
 
+		}
+		TrySave();
 	}
 
 	void OverTier(string tier)
 	{
-		Logger.LogInformation($"Mouse over {tier} tier!");
-		dragtier = tier;
+		//Logger.LogInformation($"Mouse over {tier} tier!");
+		overtier = tier;
 		StateHasChanged();
 	}
 
 	void OuttaTier(MouseEventArgs e)
 	{
-		Logger.LogInformation($"Mouse out (tier)!");
-		dragtier = "";
+		//Logger.LogInformation($"Mouse out (tier)!");
+		overtier = "";
 		StateHasChanged();
 	}
-
-
-	void OverHere(int pos)
-	{
-		Logger.LogInformation($"Mouse over some item!");
-		dragover = pos;
-		StateHasChanged();
-	}
-
-	void OuttaHere()
-	{
-		Logger.LogInformation($"Mouse out (item)!");
-		dragover = -1;
-		StateHasChanged();
-	}
-	// End Characacter Draggin'
 
 	public void Dispose()
 	{
