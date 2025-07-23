@@ -355,13 +355,13 @@
 			{
 				var temp1 = DragDropApi<TierItem>.GetDragged();
 				var temp2 = DragDropApi<TierItem>.GetOver();
-				DragDropApi<TierItem>.StopDragInsert();
+				DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert);
 				var temp3 = temp1.parent;
 				temp1.parent = temp2.parent;
 				temp2.parent = temp3;
 			}
 		}
-		else if (DragDropApi<TierItem>.StopDragInsert())
+		else if (DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert))
 		{
 
 		}

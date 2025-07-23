@@ -25,19 +25,16 @@ namespace MaieBlazorLib
         }
 
         /// <summary>
-        /// Stops the drag and Swaps the items if both Dragged and Over are not null and have valid indices.
+        /// Stops the drag and Inserts the dragged item in the list and position of the Hovered item if both Dragged and Over are not null and have valid indexes.
         /// </summary>
         /// <returns>Returns true if the swap was sucessful</returns>
-        public static bool StopDragSwap()
+        public static bool StopDrag()
         {
             if (Over != null && Dragged != null)
             {
                 if (Dragged.Value.Index >= 0 && Over.Value.Index >= 0)
                 {
-                    Debug.WriteLine($"Switcheroo!");
-                    var temp = Over.Value.List[Over.Value.Index];
-                    Over.Value.List[Over.Value.Index] = Dragged.Value.List[Dragged.Value.Index];
-                    Dragged.Value.List[Dragged.Value.Index] = temp;
+                    DragDropBehaviour.Insert.Behave<T>(Dragged, Over);
                     Clear();
                     return true;
                 }
@@ -47,10 +44,11 @@ namespace MaieBlazorLib
         }
 
         /// <summary>
-        /// Use 'true' to only allow a swap if both items are in the same list. Stops the drag and Swaps the items if both Dragged and Over are not null and have valid indices.
+        /// Use 'true' to only allow a insert if both items are in the same list. 
+        /// Stops the drag and Inserts the dragged item in the list and position of the Hovered item if both Dragged and Over are not null and have valid indexes.
         /// </summary>
         /// <returns>Returns true if the swap was sucessful</returns>
-        public static bool StopDragSwap(bool OnlyinSameList)
+        public static bool StopDrag(bool OnlyinSameList)
         {
             if (OnlyinSameList)
             {
@@ -58,34 +56,29 @@ namespace MaieBlazorLib
                 {
                     if (Dragged.Value.Index >= 0 && Over.Value.Index >= 0)
                     {
-                        Debug.WriteLine($"Switcheroo!");
-                        var temp = Over.Value.List[Over.Value.Index];
-                        Over.Value.List[Over.Value.Index] = Dragged.Value.List[Dragged.Value.Index];
-                        Dragged.Value.List[Dragged.Value.Index] = temp;
+                        DragDropBehaviour.Insert.Behave<T>(Dragged, Over);
                         Clear();
                         return true;
                     }
                 }
             }
             else
-                return StopDragSwap();
+                return StopDrag();
             return false;
         }
 
         /// <summary>
-        /// Stops drag and Inserts the dragged element in the List of the hovered element, at its position
+        /// Stops the drag and performs the behaviour defined by the DragDropBehaviour passed as parameter.
+        /// ( .Insert, .Swap, .Replace, .Copy )
         /// </summary>
-        /// <returns>Returns true if the insertion was sucessful</returns>
-        public static bool StopDragInsert()
+        /// <returns></returns>
+        public static bool StopDrag(IDragDropBehaviour behaviour)
         {
             if (Over != null && Dragged != null)
             {
                 if (Dragged.Value.Index >= 0 && Over.Value.Index >= 0)
                 {
-                    Debug.WriteLine($"Insertooo!");
-                    T temp = GetDragged();
-                    Dragged.Value.List.RemoveAt(Dragged.Value.Index);
-                    Over.Value.List.Insert(Over.Value.Index, temp);
+                    behaviour.Behave<T>(Dragged, Over);
                     Clear();
                     return true;
                 }
@@ -95,10 +88,12 @@ namespace MaieBlazorLib
         }
 
         /// <summary>
-        /// Use 'true' to only allow insertion only if both items are in the same list. Stops drag and Inserts the dragged element in the List of the hovered element, at its position
+        /// Use 'true' to only allow behaviour if both items are in the same list.
+        /// Stops the drag and performs the behaviour defined by the DragDropBehaviour passed as parameter.
+        /// ( .Insert, .Swap, .Replace, .Copy )
         /// </summary>
-        /// <returns>Returns true if insertion was sucessful</returns>
-        public static bool StopDragInsert(bool OnlyinSameList)
+        /// <returns></returns>
+        public static bool StopDrag(bool OnlyinSameList, IDragDropBehaviour behaviour)
         {
             if (OnlyinSameList)
             {
@@ -106,17 +101,14 @@ namespace MaieBlazorLib
                 {
                     if (Dragged.Value.Index >= 0 && Over.Value.Index >= 0)
                     {
-                        Debug.WriteLine($"Insertooo!");
-                        T temp = GetDragged();
-                        Dragged.Value.List.RemoveAt(Dragged.Value.Index);
-                        Over.Value.List.Insert(Over.Value.Index, temp);
+                        behaviour.Behave<T>(Dragged, Over);
                         Clear();
                         return true;
                     }
                 }
             }
             else
-                return StopDragInsert();
+                return StopDrag(behaviour);
             return false;
         }
 
@@ -168,5 +160,59 @@ namespace MaieBlazorLib
             return null;
         }
 
+    }
+
+    public interface IDragDropBehaviour
+    {
+        void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over);
+    }
+
+    public class DragDropBehaviour
+    {
+        public static IDragDropBehaviour Swap = new DragDropBehaviourSwap();
+        public static IDragDropBehaviour Insert = new DragDropBehaviourInsert();
+        public static IDragDropBehaviour Replace = new DragDropBehaviourReplace();
+        public static IDragDropBehaviour Copy = new DragDropBehaviourCopy();
+    }
+
+    class DragDropBehaviourSwap : IDragDropBehaviour
+    {
+        public void Behave<T>((IList<T> List, int Index)?Dragged, (IList<T> List, int Index)?Over) // not yet tested
+        {
+            Debug.WriteLine($"Switcheroo!");
+            var temp = Over.Value.List[Over.Value.Index];
+            Over.Value.List[Over.Value.Index] = Dragged.Value.List[Dragged.Value.Index];
+            Dragged.Value.List[Dragged.Value.Index] = temp;
+        }
+    }
+
+    class DragDropBehaviourInsert : IDragDropBehaviour
+    {
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        {
+            Debug.WriteLine($"Insertooo!");
+            T temp = Dragged.Value.List[Dragged.Value.Index];
+            Dragged.Value.List.RemoveAt(Dragged.Value.Index);
+            Over.Value.List.Insert(Over.Value.Index, temp);
+        }
+    }
+
+    class DragDropBehaviourReplace : IDragDropBehaviour
+    {
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        {
+            Debug.WriteLine($"Replasooo!");
+            Over.Value.List[Over.Value.Index] = Dragged.Value.List[Dragged.Value.Index];
+            Dragged.Value.List.RemoveAt(Dragged.Value.Index);
+        }
+    }
+
+    class DragDropBehaviourCopy : IDragDropBehaviour
+    {
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        {
+            Debug.WriteLine($"Copyooo!");
+            Over.Value.List[Over.Value.Index] = Dragged.Value.List[Dragged.Value.Index];
+        }
     }
 }
