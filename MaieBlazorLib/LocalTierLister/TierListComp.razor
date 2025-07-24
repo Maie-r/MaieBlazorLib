@@ -82,7 +82,7 @@
 					@pair.Value.name
 				</textarea>*@
 
-				<a class="d-flex flex-fill col-12 text-light" @ondragover="() => OverTier(pair.Key)" @ondragleave="OuttaTier">
+				<a class="d-flex flex-fill col-12 text-light" @ondragover="() => OverTier(pair.Key)" @onmouseleave="OuttaTier">
 					<div class="d-flex text-start flex-wrap col-12" style="border-top: solid; border-bottom: solid; border-color: @pair.Value.color">
 						@for (int local = 0; local < pair.Value.items.Count; local++)
 						{

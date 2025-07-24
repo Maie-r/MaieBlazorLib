@@ -160,6 +160,24 @@ namespace MaieBlazorLib
             return null;
         }
 
+        public static int GetDraggedIndex()
+        {
+            if (Dragged != null)
+            {
+                return Dragged.Value.Index;
+            }
+            return -1;
+        }
+
+        public static int GetOverIndex()
+        {
+            if (Over != null)
+            {
+                return Over.Value.Index;
+            }
+            return -1;
+        }
+
     }
 
     public interface IDragDropBehaviour
