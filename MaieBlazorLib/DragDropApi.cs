@@ -187,14 +187,15 @@ namespace MaieBlazorLib
 
     public class DragDropBehaviour
     {
-        public static IDragDropBehaviour Swap = new DragDropBehaviourSwap();
-        public static IDragDropBehaviour Insert = new DragDropBehaviourInsert();
-        public static IDragDropBehaviour Replace = new DragDropBehaviourReplace();
-        public static IDragDropBehaviour Copy = new DragDropBehaviourCopy();
+        public static IDragDropBehaviour Swap => DragDropBehaviourSwap.Instance;
+        public static IDragDropBehaviour Insert => DragDropBehaviourInsert.Instance;
+        public static IDragDropBehaviour Replace => DragDropBehaviourReplace.Instance;
+        public static IDragDropBehaviour Copy => DragDropBehaviourCopy.Instance;
     }
 
-    class DragDropBehaviourSwap : IDragDropBehaviour
+    internal class DragDropBehaviourSwap : IDragDropBehaviour
     {
+        public static readonly DragDropBehaviourSwap Instance = new();
         public void Behave<T>((IList<T> List, int Index)?Dragged, (IList<T> List, int Index)?Over) // not yet tested
         {
             Debug.WriteLine($"Switcheroo!");
@@ -204,8 +205,9 @@ namespace MaieBlazorLib
         }
     }
 
-    class DragDropBehaviourInsert : IDragDropBehaviour
+    internal class DragDropBehaviourInsert : IDragDropBehaviour
     {
+        public static readonly DragDropBehaviourInsert Instance = new();
         public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
         {
             Debug.WriteLine($"Insertooo!");
@@ -215,8 +217,9 @@ namespace MaieBlazorLib
         }
     }
 
-    class DragDropBehaviourReplace : IDragDropBehaviour
+    internal class DragDropBehaviourReplace : IDragDropBehaviour
     {
+        public static readonly DragDropBehaviourReplace Instance = new();
         public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
         {
             Debug.WriteLine($"Replasooo!");
@@ -225,8 +228,9 @@ namespace MaieBlazorLib
         }
     }
 
-    class DragDropBehaviourCopy : IDragDropBehaviour
+    internal class DragDropBehaviourCopy : IDragDropBehaviour
     {
+        public static readonly DragDropBehaviourCopy Instance = new();
         public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
         {
             Debug.WriteLine($"Copyooo!");
