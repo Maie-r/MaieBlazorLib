@@ -81,8 +81,9 @@
 					style="background-color: @pair.Value.color; @GetFontSize(pair.Value.name); resize: none; text-align-last: center">
 					@pair.Value.name
 				</textarea>*@
+				@* @ondragover="() => OverTier(pair.Key)" @ondragover:preventDefault="true" @ondragleave="OuttaTier"*@
 
-				<a class="d-flex flex-fill col-12 text-light" @ondragover="() => OverTier(pair.Key)" @onmouseleave="OuttaTier">
+				<a class="d-flex flex-fill col-12 text-light" @ondrop="() => Test(pair.Key)">
 					<div class="d-flex text-start flex-wrap col-12" style="border-top: solid; border-bottom: solid; border-color: @pair.Value.color">
 						@for (int local = 0; local < pair.Value.items.Count; local++)
 						{
@@ -344,15 +345,20 @@
 
 	void StopDrag()
 	{
-		if (overtier != "")
+		if (!String.IsNullOrEmpty(overtier))
 		{
-			if (DragDropApi<TierItem>.GetOver() == null)
+			if (DragDropApi<TierItem>.GetOver().parent != selected.list[overtier]) // it just failed to remove the dragover item, so going to the tierlist is priority
 			{
-				selected.list[overtier].items.Add(DragDropApi<TierItem>.GetDragged());
+				//Logger.LogInformation("Tried to put over an empty tier!");
+				//Logger.LogInformation(DragDropApi<TierItem>.GetOver().parent.name + " != " + selected.list[overtier].name);
+				selected.list[overtier].items.Insert(0, new TierItem("you shouldn't be seeing this,", selected.list[overtier]));
+				DragDropApi<TierItem>.OverHere(selected.list[overtier].items, 0);
 				DragDropApi<TierItem>.GetDragged().parent = selected.list[overtier];
+				DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace);
 			}
 			else 
 			{
+				//Logger.LogInformation("Regular tieritem change!");
 				var temp1 = DragDropApi<TierItem>.GetDragged();
 				var temp2 = DragDropApi<TierItem>.GetOver();
 				DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert);
@@ -363,9 +369,10 @@
 		}
 		else if (DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert))
 		{
-
+			Logger.LogInformation("DO YOU EVEN HEAR ME? DOES THIS CODE EVEN GET REACHED?");
 		}
 		TrySave();
+		overtier = "";
 	}
 
 	void OverTier(string tier)
@@ -377,8 +384,15 @@
 
 	void OuttaTier(MouseEventArgs e)
 	{
-		//Logger.LogInformation($"Mouse out (tier)!");
+		Logger.LogInformation($"Mouse out (tier)!");
 		overtier = "";
+		StateHasChanged();
+	}
+
+	void Test(string Tier)
+	{
+		Logger.LogInformation($"Mouse dropped over {Tier} tier!");
+		overtier = Tier;
 		StateHasChanged();
 	}
 
