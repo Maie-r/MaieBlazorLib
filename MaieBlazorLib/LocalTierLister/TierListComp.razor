@@ -83,7 +83,7 @@
 				</textarea>*@
 				@* @ondragover="() => OverTier(pair.Key)" @ondragover:preventDefault="true" @ondragleave="OuttaTier"*@
 
-				<a class="d-flex flex-fill col-12 text-light" @ondrop="() => Test(pair.Key)">
+				<a class="d-flex flex-fill col-12 text-light" @ondrop="() => DropIntoTier(pair.Key)">
 					<div class="d-flex text-start flex-wrap col-12" style="border-top: solid; border-bottom: solid; border-color: @pair.Value.color">
 						@for (int local = 0; local < pair.Value.items.Count; local++)
 						{
@@ -94,7 +94,7 @@
 								{
 									<MudTooltip class="col-2" Color="Color.Transparent">
 										<ChildContent>
-											<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" 
+											<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(pair.Value.items[i] == DragDropApi<TierItem>.GetOver())"
 											OnItemSelect="Select" 
 											OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, i)" 
 											OnItemDragStop="StopDrag" 
@@ -110,7 +110,7 @@
 								}
 								else
 								{
-									<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" 
+									<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(pair.Value.items[i] == DragDropApi<TierItem>.GetOver())"
 									OnItemSelect="Select" 
 									OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, i)" 
 									OnItemDragStop="StopDrag" 
@@ -347,9 +347,9 @@
 	{
 		if (!String.IsNullOrEmpty(overtier))
 		{
-			if (DragDropApi<TierItem>.GetOver().parent != selected.list[overtier]) // it just failed to remove the dragover item, so going to the tierlist is priority
+			if (DragDropApi<TierItem>.GetOver().parent != selected.list[overtier] && selected.list[overtier].items.Count <= 0) // it just failed to remove the dragover item, so going to the tierlist is priority
 			{
-				//Logger.LogInformation("Tried to put over an empty tier!");
+				Logger.LogInformation("Tried to put over an empty tier!");
 				//Logger.LogInformation(DragDropApi<TierItem>.GetOver().parent.name + " != " + selected.list[overtier].name);
 				selected.list[overtier].items.Insert(0, new TierItem("you shouldn't be seeing this,", selected.list[overtier]));
 				DragDropApi<TierItem>.OverHere(selected.list[overtier].items, 0);
@@ -389,7 +389,7 @@
 		StateHasChanged();
 	}
 
-	void Test(string Tier)
+	void DropIntoTier(string Tier)
 	{
 		Logger.LogInformation($"Mouse dropped over {Tier} tier!");
 		overtier = Tier;

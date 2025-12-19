@@ -189,6 +189,9 @@ namespace MaieBlazorLib
     {
         public static IDragDropBehaviour Swap => DragDropBehaviourSwap.Instance;
         public static IDragDropBehaviour Insert => DragDropBehaviourInsert.Instance;
+        public static IDragDropBehaviour InsertAfter => DragDropBehaviourInsertAfter.Instance;
+        public static IDragDropBehaviour Push => DragDropBehaviourPush.Instance;
+        public static IDragDropBehaviour Add => DragDropBehaviourAdd.Instance;
         public static IDragDropBehaviour Replace => DragDropBehaviourReplace.Instance;
         public static IDragDropBehaviour Copy => DragDropBehaviourCopy.Instance;
     }
@@ -214,6 +217,45 @@ namespace MaieBlazorLib
             T temp = Dragged.Value.List[Dragged.Value.Index];
             Dragged.Value.List.RemoveAt(Dragged.Value.Index);
             Over.Value.List.Insert(Over.Value.Index, temp);
+        }
+    }
+
+    internal class DragDropBehaviourPush : IDragDropBehaviour
+    {
+        public static readonly DragDropBehaviourPush Instance = new();
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        {
+            Debug.WriteLine($"Insertooo!");
+            T temp = Dragged.Value.List[Dragged.Value.Index];
+            Dragged.Value.List.RemoveAt(Dragged.Value.Index);
+            Over.Value.List.Insert(0, temp);
+        }
+    }
+
+    internal class DragDropBehaviourAdd : IDragDropBehaviour
+    {
+        public static readonly DragDropBehaviourAdd Instance = new();
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        {
+            Debug.WriteLine($"Insertooo!");
+            T temp = Dragged.Value.List[Dragged.Value.Index];
+            Dragged.Value.List.RemoveAt(Dragged.Value.Index);
+            Over.Value.List.Add(temp);
+        }
+    }
+
+    internal class DragDropBehaviourInsertAfter : IDragDropBehaviour
+    {
+        public static readonly DragDropBehaviourInsertAfter Instance = new();
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        {
+            Debug.WriteLine($"Insertooo Afterooo!");
+            T temp = Dragged.Value.List[Dragged.Value.Index];
+            Dragged.Value.List.RemoveAt(Dragged.Value.Index);
+            if (Over.Value.Index >= Over.Value.List.Count - 1)
+                Over.Value.List.Add(temp);
+            else
+                Over.Value.List.Insert(Over.Value.Index + 1, temp);
         }
     }
 

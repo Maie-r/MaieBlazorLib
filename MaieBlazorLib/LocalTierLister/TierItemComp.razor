@@ -8,14 +8,19 @@
 <a class="clickable" draggable="true" @ondragover="OverHere" @ondragleave="OuttaHere" @onmousedown="(e) => StartDrag(e)" @ondragend="StopDrag">
 	@if (item.img == "" || NoImage)
 	{
-		<p class="@(isminimal ? "tieritemsmall": "tieritem") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
+		<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
 	}
 	else
 	{
-		<img src="@item.img" draggable="false" @ondragleave="OuttaHere" alt="@item.name" class="@(isminimal ? "tieritemsmall": "tieritem") rounded flex-fill m-1" @onerror="ImageFail" />
+		<img src="@item.img" draggable="false" @ondragleave="OuttaHere" alt="@item.name" class="@(isminimal ? "tieritemsmall": "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" @onerror="ImageFail" />
 	}
 </a>
 <script src="imageHandler.js"></script>
+<style>
+	.OverItem{
+		opacity: 0.5;
+	}
+</style>
 
 @code {
 	[Parameter]
@@ -29,6 +34,9 @@
 
 	[Parameter]
 	public bool NoImage { get; set; }
+
+	[Parameter]
+	public bool OverStyle { get; set; }
 
 	[Parameter]
 	public EventCallback<TierItem> OnItemSelect { get; set; }
