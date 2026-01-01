@@ -114,13 +114,13 @@ namespace MaieBlazorLib
 
         public static void OverHere(IList<T> t, int e)
         {
-            Debug.WriteLine($"Over i = {e}");
+            //Debug.WriteLine($"Over i = {e}");
             Over = (t, e);
         }
 
         public static void OuttaHere()
         {
-            Debug.WriteLine($"Mouse out!");
+            //Debug.WriteLine($"Mouse out!");
             Over = null;
         }
 

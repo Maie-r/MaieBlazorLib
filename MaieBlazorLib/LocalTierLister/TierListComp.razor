@@ -66,7 +66,7 @@
 			<input type="text" class="spinput rounded col-4 flex-fill mx-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
 			<MudTextField @bind-Value="filter" Placeholder="Search" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0 mx-2 text-light"></MudTextField>
 		</div>
-		@foreach (var pair in selected.list)
+		@foreach (var pair in selected.tiers)
 		{
 			<div class="p-0 m-0 d-flex darken-25 flex-column flex-sm-row col-12">
 				<a class="text-box-container d-flex clickable flex-column text-center justify-content-center col-sm-1 py-1 py-sm-1 py-md-auto me-1" @onmousedown="(e) => SelectTier(e, pair.Key)" style="background-color: @pair.Value.color">
@@ -81,9 +81,9 @@
 					style="background-color: @pair.Value.color; @GetFontSize(pair.Value.name); resize: none; text-align-last: center">
 					@pair.Value.name
 				</textarea>*@
-				@* @ondragover="() => OverTier(pair.Key)" @ondragover:preventDefault="true" @ondragleave="OuttaTier"*@
+				 
 
-				<a class="d-flex flex-fill col-12 text-light" @ondrop="() => DropIntoTier(pair.Key)">
+				<a class="d-flex flex-fill col-12 text-light" @ondrop="() => DropIntoTier(pair.Key)" @ondragover="() => OverTier(pair.Key)" @ondragover:preventDefault="true" @ondragleave="OuttaTier">
 					<div class="d-flex text-start flex-wrap col-12" style="border-top: solid; border-bottom: solid; border-color: @pair.Value.color">
 						@for (int local = 0; local < pair.Value.items.Count; local++)
 						{
@@ -154,10 +154,10 @@
 @code
 {
 	[Parameter]
-	public required TierList selected { get; set; }
+	public required TierList? selected { get; set; }
 
 	[Parameter]
-	public TierLister tl { get; set; }
+	public TierLister? tl { get; set; } = null!;
 
 	[Parameter]
 	public EventCallback OnSave { get; set; }
@@ -178,10 +178,10 @@
 
 	string filter = "";
 	string temptiername = "";
-	ElementReference temptier;
+	//ElementReference temptier;
 
 	string overtier = ""; // which tier mouse is over
-	string draggedtier = ""; // which tier dragged item was from
+	//string draggedtier = ""; // which tier dragged item was from
 
 	void Toggle(ref bool thing)
 	{
@@ -242,9 +242,9 @@
 		if (e.Button == 2)
 		{
 			Logger.LogInformation("Registered tier " + tier);
-			selectier = selected.list[tier];
+			selectier = selected.tiers[tier];
 			selecitem = null;
-			selecitemtier = null;
+			selecitemtier = "";
 		}
 	}
 
@@ -252,21 +252,21 @@
 	{
 		selecitem = null;
 		selectier = null;
-		selecitemtier = null;
+		selecitemtier = "";
 		TrySave();
 	}
 
 	void Add(string key)
 	{
-		TierItem temp = new TierItem("NEW ITEM,", selected.list[key]);
-		selected.list[key].Add(temp);
+		TierItem temp = new TierItem("NEW ITEM,", selected.tiers[key]);
+		selected.tiers[key].Add(temp);
 		selecitem = temp;
 		TrySave();
 	}
 
 	void NewTier()
 	{
-		selected.list.Add("New Tier", new Tier("New Tier", "#EAD21F"));
+		selected.tiers.Add("New Tier", new Tier("New Tier", "#EAD21F"));
 		TrySave();
 	}
 
@@ -275,17 +275,18 @@
 		ChangeTierName(tier.name, tier.ogname);
 	}
 
-	void ChangeTierName(string neww, string old)
+	void ChangeTierName(string? neww, string old)
 	{
 		Logger.LogInformation($"{neww}");
-		Tier temp = selected.list[old];
-		selected.list.Remove(old);
+		if (String.IsNullOrEmpty(neww)) return;
+		Tier? temp = selected.tiers[old];
+		selected.tiers.Remove(old);
 
 		while (true)
 		{
 			try
 			{
-				selected.list.Add(neww, temp);
+				selected.tiers.Add(neww, temp);
 				break;
 			}
 			catch
@@ -328,7 +329,8 @@
 
 	void Delete()
 	{
-		selected.list[selecitemtier].items.Remove(selecitem);
+		if (selecitem == null) return;
+		selected.tiers[selecitemtier].items.Remove(selecitem);
 		selecitem = null;
 		selecitemtier = "";
 		YouSure();
@@ -337,7 +339,8 @@
 
 	void DeleteTier()
 	{
-		selected.list.Remove(selectier.ogname);
+		if (selectier == null) return;
+		selected.tiers.Remove(selectier.ogname);
 		selectier = null;
 		YouSure();
 		TrySave();
@@ -345,26 +348,32 @@
 
 	void StopDrag()
 	{
+		//Logger.LogInformation("Overtier: "+overtier);
 		if (!String.IsNullOrEmpty(overtier))
 		{
-			if (DragDropApi<TierItem>.GetOver().parent != selected.list[overtier] && selected.list[overtier].items.Count <= 0) // it just failed to remove the dragover item, so going to the tierlist is priority
+			if (DragDropApi<TierItem>.GetOver() != null && DragDropApi<TierItem>.GetOver().parent != selected.tiers[overtier] && selected.tiers[overtier].items.Count <= 0) // it just failed to remove the dragover item, so going to the tierlist is priority
 			{
 				Logger.LogInformation("Tried to put over an empty tier!");
-				//Logger.LogInformation(DragDropApi<TierItem>.GetOver().parent.name + " != " + selected.list[overtier].name);
-				selected.list[overtier].items.Insert(0, new TierItem("you shouldn't be seeing this,", selected.list[overtier]));
-				DragDropApi<TierItem>.OverHere(selected.list[overtier].items, 0);
-				DragDropApi<TierItem>.GetDragged().parent = selected.list[overtier];
-				DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace);
+				//Logger.LogInformation(DragDropApi<TierItem>.GetOver().parent.name + " != " + selected.tiers[overtier].name);
+				var tempdragged = DragDropApi<TierItem>.GetDragged();
+				var templist = selected.tiers[overtier];
+				selected.tiers[overtier].items.Insert(0, new TierItem("you shouldn't be seeing this,", selected.tiers[overtier]));
+				DragDropApi<TierItem>.OverHere(selected.tiers[overtier].items, 0);
+				if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace)) Logger.LogInformation("Failed tier item swap");
+				else tempdragged.parent = templist;
 			}
 			else 
 			{
 				//Logger.LogInformation("Regular tieritem change!");
 				var temp1 = DragDropApi<TierItem>.GetDragged();
 				var temp2 = DragDropApi<TierItem>.GetOver();
-				DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert);
-				var temp3 = temp1.parent;
-				temp1.parent = temp2.parent;
-				temp2.parent = temp3;
+				if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert)) Logger.LogInformation("Failed tier item swap");
+				else
+				{
+					var temp3 = temp1.parent;
+					temp1.parent = temp2.parent;
+					temp2.parent = temp3;
+				}	
 			}
 		}
 		else if (DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert))
@@ -373,11 +382,12 @@
 		}
 		TrySave();
 		overtier = "";
+		StateHasChanged();
 	}
 
 	void OverTier(string tier)
 	{
-		//Logger.LogInformation($"Mouse over {tier} tier!");
+		Logger.LogInformation($"Mouse over {tier} tier!");
 		overtier = tier;
 		StateHasChanged();
 	}
@@ -398,7 +408,7 @@
 
 	public void Dispose()
 	{
-		selected = null;
+		selected = default;
 		selectier = null;
 		selecitem = null;
 	}

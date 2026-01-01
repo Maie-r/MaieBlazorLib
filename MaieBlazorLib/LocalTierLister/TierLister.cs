@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Microsoft.Maui.Storage;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using static MudBlazor.CategoryTypes;
 
 namespace MaieBlazorLib.LocalTierLister
 {
@@ -50,9 +53,30 @@ namespace MaieBlazorLib.LocalTierLister
             return null;
         }
 
+        static async Task<List<TierList>> LoadFrom(string fileName)
+        {
+            List<TierList> TierLists = new List<TierList>();
+
+            var path = Path.Combine(GetFolder(), fileName);
+
+            if (!File.Exists(path))
+                return null;
+
+            string contents = await File.ReadAllTextAsync(path);
+            string[] tierlists = contents.Split(';');
+            foreach (string tierlist in tierlists) // every tier list
+            {
+                TierList temp = ReadList(tierlist);
+                TierLists.Add(temp);
+            }
+            return TierLists;
+        }
+
+        /* WINDOWS ONLY IMPLEMENTATION
         static List<TierList> LoadFrom(string link)
         {
             List<TierList> TierLists = new List<TierList>();
+
             if (!File.Exists(link))
             {
                 return null;
@@ -64,74 +88,60 @@ namespace MaieBlazorLib.LocalTierLister
                 TierLists.Add(temp);
             }
             return TierLists;
+        }*/
+
+        async void LoadStuff()
+        {
+            Directory.CreateDirectory(GetFolder());
+            await LoadStuff(Path.Join(GetFolder(), "lists"));
         }
 
-        void LoadStuff()
+        async Task LoadStuff(string filename)
         {
-            TierLists = new List<TierList>();
-            string folder = GetFolder();
-            Directory.CreateDirectory(folder);
-            if (!File.Exists($"{folder}lists.txt"))
+            try
             {
-                File.WriteAllText($"{folder}lists.txt", "");
+                TierLists = TierListSaveData.LoadFrom(filename);
+                Debug.WriteLine(TierLists.Count);
             }
-            string[] tierlists = File.ReadAllText($"{folder}lists.txt").Split(';');
-            Debug.WriteLine(tierlists[0]);
-            foreach (string tierlist in tierlists) // every tier list
+            catch (NotImplementedException e)
             {
-                TierList temp = ReadList(tierlist);
-                TierLists.Add(temp);
-            }
-        }
-
-        void LoadStuff(string link)
-        {
-            TierLists = new List<TierList>();
-            if (!File.Exists(link))
-            {
-                File.WriteAllText(link, "");
-            }
-            string[] tierlists = File.ReadAllText(link).Split(';');
-            foreach (string tierlist in tierlists) // every tier list
-            {
-                TierList temp = ReadList(tierlist);
-                TierLists.Add(temp);
-            }
-        }
-
-        static TierList ReadList(string tierlist)
-        {
-            string[] sep1 = tierlist.Split("/-/");
-            TierList temp = new TierList(sep1[0]);
-            for (int i = 1; i < sep1.Length; i++) // every tier
-            {
-                string[] sep2 = sep1[i].Split("\r\n");
-                Tier temp2 = new Tier(sep2[0].Split(','));
+                Debug.WriteLine(e.Message);
+                // Legacy fallback
                 try
                 {
-                    temp.list.Add(temp2.name, temp2);
-                }
-                catch
-                {
-                    temp.list.Add(temp2.name + "(1)", temp2);
-                }
-                //Debug.WriteLine(sep2.Length);
-                for (int j = 1; j < sep2.Length; j++) // every item
-                {
-                    if (sep2[j] == "") { break; }
-                    temp.list[temp2.name].items.Add(new TierItem(sep2[j], temp2));
-                }
+                    TierLists = new List<TierList>();
+                    //Debug.WriteLine("loading from " + link);
+                    var link = Path.Join(GetFolder(), "lists.txt");
 
+                    if (!File.Exists(link))
+                    {
+                        await File.WriteAllTextAsync(link, string.Empty);
+                    }
+                    string content = await File.ReadAllTextAsync(link);
+                    //Debug.WriteLine(content);
+                    string[] tierlists = content.Split(';');
+                    foreach (string tierlist in tierlists) // every tier list
+                    {
+                        Debug.WriteLine("Ahoy!");
+                        TierList temp = ReadList(tierlist);
+                        TierLists.Add(temp);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Failed to load tierlists: " + ex.Message);
+                    TierLists = new List<TierList>();
+                }
             }
-            return temp;
+            
         }
 
         /// <summary>
         /// It will only update by replacing a tierlist with the same name as the one in the parameter
         /// </summary>
-        public static void SaveSpecific(string link, TierList newtl)
+        public static async void SaveSpecific(string link, TierList newtl)
         {
-            List<TierList> TierLists = LoadFrom(link);
+            List<TierList> TierLists = await LoadFrom(link);
             Debug.WriteLine(TierLists.Count);
             for (int j = 0; j < TierLists.Count; j++)
             {
@@ -148,7 +158,7 @@ namespace MaieBlazorLib.LocalTierLister
             {
                 i++;
                 result += list.name;
-                foreach (Tier tier in list.list.Values)
+                foreach (Tier tier in list.tiers.Values)
                 {
                     result += $"/-/{tier.name},{tier.color}\r\n";
                     foreach (var item in tier.items)
@@ -162,69 +172,136 @@ namespace MaieBlazorLib.LocalTierLister
                     result += ";";
                 }
             }
-            File.WriteAllText(link, result);
+            await File.WriteAllTextAsync(link, result);
         }
 
-        public void SaveAll()
+        public async void SaveAll()
         {
-            string folder = GetFolder();
-            string result = "";
-            int i = 0;
-            foreach (var list in TierLists) // each tier list
+            try
             {
-                i++;
-                result += list.name;
-                foreach (Tier tier in list.list.Values)
-                {
-                    result += $"/-/{tier.name},{tier.color}\r\n";
-                    foreach (var item in tier.items)
-                    {
-                        //Debug.WriteLine($"{item.name}, {item.img}");
-                        result += $"{item.name},{item.img}" + "\r\n";
-                    }
-                }
-                if (i < TierLists.Count)
-                {
-                    result += ";";
-                }
-
+                SaveAllJson();
             }
-            File.WriteAllText(folder + "lists.txt", result);
+            catch
+            {
+                // Legacy fallback
+                Debug.WriteLine("Saving");
+                string folder = GetFolder();
+                string result = "";
+                int i = 0;
+                foreach (var list in TierLists) // each tier list
+                {
+                    i++;
+                    result += list.name;
+                    foreach (Tier tier in list.tiers.Values)
+                    {
+                        result += $"/-/{tier.name},{tier.color}\r\n";
+                        foreach (var item in tier.items)
+                        {
+                            //Debug.WriteLine($"{item.name}, {item.img}");
+                            result += $"{item.name},{item.img}" + "\r\n";
+                        }
+                    }
+                    if (i < TierLists.Count)
+                    {
+                        result += ";";
+                    }
+
+                }
+                await File.WriteAllTextAsync(Path.Join(folder, "lists.txt"), result);
+            }
         }
+
+        public async void SaveAllJson()
+        {
+            if (this.TierLists == null || this.TierLists.Count <= 0)
+                throw new ArgumentNullException("No Tierlists to save.");
+            string folder = GetFolder();
+            Directory.CreateDirectory(folder);
+            string filePath = Path.Combine(folder, "lists");
+            //var json = JsonSerializer.Serialize(championship, options);
+            var saveData = new TierListSaveData(this.TierLists);
+            saveData.Save(filePath);
+        }
+
+        static JsonSerializerOptions options = new()
+        {
+            //ReferenceHandler = ReferenceHandler.Preserve,
+            //DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+            IncludeFields = true,
+            WriteIndented = true
+        };
 
         static string GetFolder()
         {
-            return AppDomain.CurrentDomain.BaseDirectory + @"TierList\";
+            return Path.Join(FileSystem.AppDataDirectory, "TierList");
+        }
+
+        // DEPRECATED ------------------------------------------
+        static TierList ReadList(string tierlist)
+        {
+            string[] sep1 = tierlist.Split("/-/");
+            TierList temp = new TierList(sep1[0]);
+            for (int i = 1; i < sep1.Length; i++) // every tier
+            {
+                string[] sep2 = sep1[i].Split("\r\n");
+                Tier temp2 = new Tier(sep2[0].Split(','));
+                try
+                {
+                    temp.tiers.Add(temp2.name, temp2);
+                }
+                catch
+                {
+                    temp.tiers.Add(temp2.name + "(1)", temp2);
+                }
+                //Debug.WriteLine(sep2.Length);
+                for (int j = 1; j < sep2.Length; j++) // every item
+                {
+                    if (sep2[j] == "") { break; }
+                    temp.tiers[temp2.name].items.Add(new TierItem(sep2[j], temp2));
+                }
+
+            }
+            return temp;
         }
     }
 
     public class TierList
     {
-        public Dictionary<string, Tier> list;
+        public Dictionary<string, Tier> tiers;
         public string name;
 
         public TierList(string name)
         {
             this.name = name;
-            list = new Dictionary<string, Tier>();
+            tiers = new Dictionary<string, Tier>();
         }
 
         public TierList(string name, bool templatefill)
         {
             this.name = name;
-            list = new Dictionary<string, Tier>();
+            tiers = new Dictionary<string, Tier>();
             if (templatefill)
                 TemplateTiers();
         }
 
         void TemplateTiers()
         {
-            list.Add("S", new Tier("S", "#6603fcff"));
-            list.Add("A", new Tier("A", "#d31cd9ff"));
-            list.Add("B", new Tier("B", "#d92b59ff"));
-            list.Add("C", new Tier("C", "#de6626ff"));
-            list.Add("D", new Tier("D", "#e8b426ff"));
-            list.Add("F", new Tier("F", "#6f6e78ff"));
+            tiers.Add("S", new Tier("S", "#6603fcff"));
+            tiers.Add("A", new Tier("A", "#d31cd9ff"));
+            tiers.Add("B", new Tier("B", "#d92b59ff"));
+            tiers.Add("C", new Tier("C", "#de6626ff"));
+            tiers.Add("D", new Tier("D", "#e8b426ff"));
+            tiers.Add("F", new Tier("F", "#6f6e78ff"));
+        }
+
+        public List<TierItem> GetAllItems()
+        {
+            List<TierItem> items = new List<TierItem>();
+            foreach (Tier tier in tiers.Values)
+            {
+                items.AddRange(tier.items);
+            }
+            return items;
         }
     }
 
@@ -259,10 +336,24 @@ namespace MaieBlazorLib.LocalTierLister
 
     public class TierItem
     {
-        public string name;
-        public string img;
-        public Tier parent;
+        public string name { get; set; }
+        public string img { get; set; }
+        public Tier parent { get; set; }
 
+        public TierItem() { }
+
+        public TierItem(string name) 
+        {
+            this.name = name;
+        }
+
+        public TierItem(string name, string img)
+        {
+            this.name = name;
+            this.img = img;
+        }
+
+        //DEPRECATED
         public TierItem(string both, Tier parent)
         {
             string[] eh = both.Split(',');

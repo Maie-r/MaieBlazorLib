@@ -5,7 +5,7 @@
 @inject ILogger<TierItemComp> Logger
 @inject IJSRuntime JSRuntime
 
-<a class="clickable" draggable="true" @ondragover="OverHere" @ondragleave="OuttaHere" @onmousedown="(e) => StartDrag(e)" @ondragend="StopDrag">
+@*@<a class="clickable draggable" draggable="true" @ondragover="OverHere" @ondragleave="OuttaHere" @onmousedown="(e) => StartDrag(e)" @ondragend="StopDrag">
 	@if (item.img == "" || NoImage)
 	{
 		<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
@@ -13,6 +13,16 @@
 	else
 	{
 		<img src="@item.img" draggable="false" @ondragleave="OuttaHere" alt="@item.name" class="@(isminimal ? "tieritemsmall": "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" @onerror="ImageFail" />
+	}
+</a>*@
+<a class="clickable draggable" draggable="true" @ondragover="OverHere" @ondragleave="OuttaHere" @onmousedown="(e) => StartDrag(e)" @ondragend="StopDrag">
+	@if (item.img == "" || NoImage)
+	{
+		<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
+	}
+	else
+	{
+		<img src="@item.img" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" @onerror="ImageFail" />
 	}
 </a>
 <script src="imageHandler.js"></script>
@@ -91,7 +101,7 @@
 
 	void StopDrag(MouseEventArgs e)
 	{
-		Logger.LogInformation($"Stopped drag!");
+		//Logger.LogInformation($"Stopped drag!");
 		OnItemDragStop.InvokeAsync();
 	}
 
@@ -102,7 +112,7 @@
 
 	void OuttaHere()
 	{
-		Logger.LogInformation("AAAH ITS WORKING AGAIN"); // its not btw :(
+		Logger.LogInformation("AAAH ITS WORKING AGAIN"); // its not btw :( at least not universally
 		OnItemOut.InvokeAsync();
 	}
 
