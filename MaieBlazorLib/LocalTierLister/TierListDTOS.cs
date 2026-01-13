@@ -54,16 +54,30 @@ namespace MaieBlazorLib.LocalTierLister
 
         public static List<TierList> LoadFrom(string filename)
         {
-            var path = Path.Combine(GetFolder(), filename + ".json");
-            string jsonString = File.ReadAllText(path);
-            TierListSaveData? data = JsonSerializer.Deserialize<TierListSaveData>(jsonString, options);
-            List<TierList> tierLists = new List<TierList>();
-            if (data != null)
+            try
             {
-                foreach (TierListDTO tlDTO in data.TierLists)
-                    tierLists.Add(TierListDTO.ToObject(tlDTO));
+                var path = Path.Combine(GetFolder(), filename + ".json");
+                string jsonString = File.ReadAllText(path);
+                TierListSaveData? data = JsonSerializer.Deserialize<TierListSaveData>(jsonString, options);
+                List<TierList> tierLists = new List<TierList>();
+                if (data != null)
+                {
+                    foreach (TierListDTO tlDTO in data.TierLists)
+                        tierLists.Add(TierListDTO.ToObject(tlDTO));
+                }
+                return tierLists;
             }
-            return tierLists;
+            catch (FileNotFoundException)
+            {
+                Debug.WriteLine($"File not found: {filename}.json");
+                return new List<TierList>();
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading TierListSaveData from file: {ex.Message}");
+                throw;
+            }
         }
 
         static string GetFolder()

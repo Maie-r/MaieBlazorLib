@@ -213,11 +213,16 @@ namespace MaieBlazorLib.LocalTierLister
 
         public async void SaveAllJson()
         {
-            if (this.TierLists == null || this.TierLists.Count <= 0)
-                throw new ArgumentNullException("No Tierlists to save.");
             string folder = GetFolder();
             Directory.CreateDirectory(folder);
             string filePath = Path.Combine(folder, "lists");
+            if (this.TierLists == null || this.TierLists.Count <= 0)
+            {
+                Debug.WriteLine("No Tierlists to save.");
+                var emptysave = new TierListSaveData(new List<TierList>());
+                emptysave.Save(filePath);
+                return;
+            }
             //var json = JsonSerializer.Serialize(championship, options);
             var saveData = new TierListSaveData(this.TierLists);
             saveData.Save(filePath);

@@ -7,7 +7,7 @@
 @inject IJSRuntime JSRuntime
 <link href="css/charactercolor.css" rel="stylesheet" />
 
-<div>
+<div style="overflow: hidden">
 	@if (selecitem != null)
 	{
 		<div class="maiedal">
@@ -68,8 +68,8 @@
 		</div>
 		@foreach (var pair in selected.tiers)
 		{
-			<div class="p-0 m-0 d-flex darken-25 flex-column flex-sm-row col-12">
-				<a class="text-box-container d-flex clickable flex-column text-center justify-content-center col-sm-1 py-1 py-sm-1 py-md-auto me-1" @onmousedown="(e) => SelectTier(e, pair.Key)" style="background-color: @pair.Value.color">
+			<div class="p-0 m-0 d-flex darken-25 flex-md-row @(minimal ? "flex-sm-row" : "flex-column") col-12">
+				<a class="text-box-container d-flex clickable text-center justify-content-center @(minimal ? "col-1 flex-row" : "flex-row") align-items-center py-1 py-sm-1 py-md-auto me-1" @onmousedown="(e) => SelectTier(e, pair.Key)" style="background-color: @pair.Value.color">
 					<input type="text" value="@pair.Value.name" class="tierput rounded d-flex py-md-auto p-1 m-0 flex-fill text-wrap overflow-visible text-break text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Key)" placeholder="Tier Title" style="@GetFontSize(pair.Value.name); white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
 					@*<MudTextField @bind-Value="pair.Value.name" T="string" Text="@pair.Value.name" Variant="Variant.Outlined" @onblur="() => ChangeTierName(pair.Value)" AutoGrow Lines="4" Class="d-flex flex-column text-center justify-content-center text-light border-0" Style="@GetFontSize(pair.Value.name)"></MudTextField>*@
 				</a>
