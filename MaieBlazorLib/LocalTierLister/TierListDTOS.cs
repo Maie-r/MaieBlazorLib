@@ -150,6 +150,27 @@ namespace MaieBlazorLib.LocalTierLister
             return result;
         }
 
+        public static string ExportTierList(List<TierList> lists)
+        {
+            TierListSaveData saveData = new TierListSaveData(lists);
+            string jsonString = JsonSerializer.Serialize(saveData, options);
+            return jsonString;
+        }
+
+        public static string ExportTierList(TierList list)
+        {
+            TierListSaveData saveData = new TierListSaveData(new List<TierList>() { list });
+            string jsonString = JsonSerializer.Serialize(saveData, options);
+            return jsonString;
+        }
+
+        public static string ExportTierList(TierList[] lists)
+        {
+            TierListSaveData saveData = new TierListSaveData(new List<TierList>(lists));
+            string jsonString = JsonSerializer.Serialize(saveData, options);
+            return jsonString;
+        }
+
         static string GetFolder()
         {
             return Path.Join(FileSystem.AppDataDirectory, "TierList");

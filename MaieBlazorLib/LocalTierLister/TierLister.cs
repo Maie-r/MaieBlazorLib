@@ -142,6 +142,11 @@ namespace MaieBlazorLib.LocalTierLister
             return TierListSaveData.LoadFromRaw(json);
         }
 
+        public string ExportJson()
+        {
+            return TierListSaveData.ExportTierList(this.TierLists);
+        }
+
         /// <summary>
         /// It will only update by replacing a tierlist with the same name as the one in the parameter
         /// </summary>
@@ -181,39 +186,24 @@ namespace MaieBlazorLib.LocalTierLister
             await File.WriteAllTextAsync(link, result);
         }
 
+
         public async void SaveAll()
         {
             try
             {
                 SaveAllJson();
             }
-            catch
+            catch (Exception e)
             {
-                // Legacy fallback
-                Debug.WriteLine("Saving");
-                string folder = GetFolder();
-                string result = "";
-                int i = 0;
-                foreach (var list in TierLists) // each tier list
+                Debug.WriteLine(e.Message);
+                try
                 {
-                    i++;
-                    result += list.name;
-                    foreach (Tier tier in list.tiers.Values)
-                    {
-                        result += $"/-/{tier.name},{tier.color}\r\n";
-                        foreach (var item in tier.items)
-                        {
-                            //Debug.WriteLine($"{item.name}, {item.img}");
-                            result += $"{item.name},{item.img}" + "\r\n";
-                        }
-                    }
-                    if (i < TierLists.Count)
-                    {
-                        result += ";";
-                    }
-
+                    SaveAllLegacy();
                 }
-                await File.WriteAllTextAsync(Path.Join(folder, "lists.txt"), result);
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Failed to save tierlists after two attempts: " + ex.Message);
+                }
             }
         }
 
@@ -274,6 +264,35 @@ namespace MaieBlazorLib.LocalTierLister
             }
             return temp;
         }
+
+        public async void SaveAllLegacy()
+        {
+            // Legacy fallback
+            Debug.WriteLine("Saving");
+            string folder = GetFolder();
+            string result = "";
+            int i = 0;
+            foreach (var list in TierLists) // each tier list
+            {
+                i++;
+                result += list.name;
+                foreach (Tier tier in list.tiers.Values)
+                {
+                    result += $"/-/{tier.name},{tier.color}\r\n";
+                    foreach (var item in tier.items)
+                    {
+                        //Debug.WriteLine($"{item.name}, {item.img}");
+                        result += $"{item.name},{item.img}" + "\r\n";
+                    }
+                }
+                if (i < TierLists.Count)
+                {
+                    result += ";";
+                }
+
+            }
+            await File.WriteAllTextAsync(Path.Join(folder, "lists.txt"), result);
+        }
     }
 
     public class TierList
@@ -313,6 +332,11 @@ namespace MaieBlazorLib.LocalTierLister
                 items.AddRange(tier.items);
             }
             return items;
+        }
+
+        public string ExportJson()
+        {
+            return TierListSaveData.ExportTierList(this);
         }
     }
 
