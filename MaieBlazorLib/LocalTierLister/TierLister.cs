@@ -53,6 +53,7 @@ namespace MaieBlazorLib.LocalTierLister
             return null;
         }
 
+        // DEPRECATED
         static async Task<List<TierList>> LoadFrom(string fileName)
         {
             List<TierList> TierLists = new List<TierList>();
@@ -134,6 +135,11 @@ namespace MaieBlazorLib.LocalTierLister
                 }
             }
             
+        }
+
+        public List<TierList> LoadFromJson(string json)
+        {
+            return TierListSaveData.LoadFromRaw(json);
         }
 
         /// <summary>

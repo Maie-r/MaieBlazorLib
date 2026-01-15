@@ -1,4 +1,5 @@
-﻿using Microsoft.Maui.Storage;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Storage;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,8 +12,6 @@ using System.Text.RegularExpressions;
 
 namespace MaieBlazorLib.LocalTierLister
 {
-
-
     class TierListSaveData
     {
         public List<TierListDTO> TierLists { get; set; }
@@ -52,20 +51,17 @@ namespace MaieBlazorLib.LocalTierLister
             }
         }
 
+        /// <summary>
+        /// Load from a local file with filename
+        /// </summary>
+        /// <returns>Converted List<TierList></returns>
         public static List<TierList> LoadFrom(string filename)
         {
             try
             {
                 var path = Path.Combine(GetFolder(), filename + ".json");
                 string jsonString = File.ReadAllText(path);
-                TierListSaveData? data = JsonSerializer.Deserialize<TierListSaveData>(jsonString, options);
-                List<TierList> tierLists = new List<TierList>();
-                if (data != null)
-                {
-                    foreach (TierListDTO tlDTO in data.TierLists)
-                        tierLists.Add(TierListDTO.ToObject(tlDTO));
-                }
-                return tierLists;
+                return LoadFromRaw(jsonString);
             }
             catch (FileNotFoundException)
             {
@@ -78,6 +74,80 @@ namespace MaieBlazorLib.LocalTierLister
                 Debug.WriteLine($"Error loading TierListSaveData from file: {ex.Message}");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Load from a Json that represents a list of Tier Lists (DTOS)
+        /// </summary>
+        /// <returns>Converted List<TierList></returns>
+        public static List<TierList> LoadFromRaw(string DataJson)
+        {
+            try
+            {
+                DataJson = ParseJson(DataJson);
+                TierListSaveData? data = JsonSerializer.Deserialize<TierListSaveData>(DataJson, options);
+                List<TierList> tierLists = new List<TierList>();
+                if (data != null)
+                {
+                    foreach (TierListDTO tlDTO in data.TierLists)
+                        tierLists.Add(TierListDTO.ToObject(tlDTO));
+                }
+                return tierLists;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading TierListSaveData from file: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Parses the specified JSON string and ensures it conforms to the expected TierLists format.
+        /// </summary>
+        /// <remarks>If the input is a single TierList object or an array of TierList objects, the method
+        /// wraps it in an object with a 'TierLists' property. If the input already contains a 'TierLists' array at the
+        /// root, it is returned unchanged. If the input does not match any of these formats, the method returns the
+        /// original string after logging an error.</remarks>
+        /// <param name="importString">A JSON string representing either a single TierList object, an array of TierList objects, or an object
+        /// containing a 'TierLists' array.</param>
+        /// <returns>A JSON string formatted with a top-level 'TierLists' array containing the input data, or the original string
+        /// if it already matches the expected format.</returns>
+        static string ParseJson(string importString)
+        {
+            string result = importString;
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(result);
+
+                var root = doc.RootElement;
+                var rootkind = doc.RootElement.ValueKind;
+
+                if (rootkind == JsonValueKind.Object)
+                {
+                    if (root.TryGetProperty("TierLists", out JsonElement tierlists))
+                        if (tierlists.ValueKind == JsonValueKind.Array)
+                            return result;
+                        else
+                            throw new InvalidOperationException("Couldn't parse Json: 'TierLists' Object array does not contain an Array");
+                    else if (root.TryGetProperty("name", out JsonElement n) && root.TryGetProperty("tiers", out JsonElement t))
+                    {
+                        return $"{{\"TierLists\":[{result}]}}";
+                    }
+                    else
+                        throw new InvalidOperationException("Couldn't parse Json: Root Object is not a TierList or TierLists array");
+                }
+                if (rootkind == JsonValueKind.Array)
+                {
+                    return $"{{\"TierLists\":{result}}}";
+                }
+
+                throw new InvalidOperationException("Couldn't parse Json: Root is not an Object or Array");
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Unhandled Exception: " + e.Message);
+            }
+            return result;
         }
 
         static string GetFolder()
