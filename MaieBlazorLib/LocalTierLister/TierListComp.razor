@@ -61,10 +61,18 @@
 			</div>
 		}
 	}
-	<div class="row col-12 d-flex darken-50 flex-column text-light m-2">
-		<div class="d-flex flex-wrap flex-fill flex-row">
-			<input type="text" class="spinput rounded col-4 flex-fill mx-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
-			<MudTextField @bind-Value="filter" Placeholder="Search" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0 mx-2 text-light"></MudTextField>
+	<div class="col-12 d-flex darken-50 flex-column text-light m-0 m-md-2 rounded">
+		<div class="d-flex flex-wrap flex-fill flex-row rounded">
+			<input type="text" class="spinput rounded col-4 flex-fill me-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
+			<div class="row col-sm-4 col-md-3 col-lg-2 mx-2 my-1 d-flex flex-fill flex-wrap">
+				<div class="row p-0 col-12 d-flex">
+					<div class="d-flex col-12 p-0 flex-nowrap flex-fill flex-row">
+						<h5 class="clickable flex-fill p-2 m-0 text-center rounded btn bg-primary align-content-center" @onclick="Export"> Export Tierlist </h5>
+					</div>
+				</div>
+			</div>
+			<MudTextField @bind-Value="filter" Placeholder="Search" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="m-0 mt-2 mx-2 p-0 text-light"></MudTextField>
+			
 		</div>
 		@foreach (var pair in selected.tiers)
 		{
@@ -325,6 +333,42 @@
 	void YouSure()
 	{
 		yousure = !yousure;
+	}
+
+	async void Export()
+	{
+		var json = TierLister.ExportJson(selected);
+		if (string.IsNullOrEmpty(json))
+		{
+			Logger.LogWarning("ExportAll: no JSON produced from TierService.tl.ExportJson()");
+			return;
+		}
+
+		try
+		{
+			#if ANDROID || WINDOWS || IOS || MACCATALYST
+			// Use native MAUI clipboard when running as a MAUI app (Android, Windows, iOS, MacCatalyst).
+			await Clipboard.SetTextAsync(json);
+			#else
+			// Fallback for browser/web: use navigator.clipboard via JS interop.
+			await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", json);
+			#endif
+			Logger.LogInformation("Exported JSON copied to clipboard.");
+		}
+		catch (Exception ex)
+		{
+			Logger.LogError(ex, "Failed to copy exported JSON to clipboard using primary method.");
+			// Try the other approach as a best-effort fallback.
+			try
+			{
+				await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", json);
+				Logger.LogInformation("Fallback: exported JSON copied to clipboard via JS.");
+			}
+			catch (Exception jsEx)
+			{
+				Logger.LogError(jsEx, "Fallback copy to clipboard via JS also failed.");
+			}
+		}
 	}
 
 	void Delete()

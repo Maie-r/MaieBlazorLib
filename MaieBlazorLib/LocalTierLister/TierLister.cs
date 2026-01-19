@@ -142,9 +142,18 @@ namespace MaieBlazorLib.LocalTierLister
             return TierListSaveData.LoadFromRaw(json);
         }
 
+        public static string ExportJson(TierLister tl)
+        {
+            return TierListSaveData.ExportTierList(tl.TierLists);
+        }
+        public static string ExportJson(TierList tl)
+        {
+            return TierListSaveData.ExportTierList(tl);
+        }
+
         public string ExportJson()
         {
-            return TierListSaveData.ExportTierList(this.TierLists);
+            return ExportJson(this);
         }
 
         /// <summary>
