@@ -196,7 +196,7 @@ namespace MaieBlazorLib.LocalTierLister
         }
 
 
-        public async void SaveAll()
+        public async Task SaveAll()
         {
             try
             {

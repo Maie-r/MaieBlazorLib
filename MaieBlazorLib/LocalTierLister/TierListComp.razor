@@ -170,6 +170,12 @@
 	[Parameter]
 	public EventCallback OnSave { get; set; }
 
+	[Parameter] 
+	public EventCallback<string> OnExport { get; set; }
+
+	[Parameter]
+	public EventCallback<string> OnError { get; set; }
+
 	Tier? selectier;
 
 	TierItem? selecitem;
@@ -322,12 +328,12 @@
 		Logger.LogInformation(h);
 	}
 
-	void TrySave()
+	async Task TrySave()
 	{
 		Logger.LogInformation("Saving!");
 		if (tl != null)
-			tl.SaveAll();
-		OnSave.InvokeAsync();
+			await tl.SaveAll();
+		await OnSave.InvokeAsync();
 	}
 
 	void YouSure()
@@ -340,7 +346,7 @@
 		var json = TierLister.ExportJson(selected);
 		if (string.IsNullOrEmpty(json))
 		{
-			Logger.LogWarning("ExportAll: no JSON produced from TierService.tl.ExportJson()");
+			await OnError.InvokeAsync("Couldn't export tierlist: no JSON produced from TierService.tl.ExportJson()");
 			return;
 		}
 
@@ -354,6 +360,7 @@
 			await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", json);
 			#endif
 			Logger.LogInformation("Exported JSON copied to clipboard.");
+			await OnExport.InvokeAsync(json);
 		}
 		catch (Exception ex)
 		{
@@ -367,6 +374,7 @@
 			catch (Exception jsEx)
 			{
 				Logger.LogError(jsEx, "Fallback copy to clipboard via JS also failed.");
+				await OnError.InvokeAsync("Failed to export Tierlist into the clipboard");
 			}
 		}
 	}

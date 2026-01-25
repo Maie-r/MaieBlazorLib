@@ -22,7 +22,7 @@
 	}
 	else
 	{
-		<img src="@item.img" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" @onerror="ImageFail" />
+		<img src="@item.img" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" loading="lazy" @onerror="ImageFail" />
 	}
 </a>
 <script src="imageHandler.js"></script>
@@ -99,25 +99,25 @@
 		}
 	}
 
-	void StopDrag(MouseEventArgs e)
+	async Task StopDrag(MouseEventArgs e)
 	{
 		//Logger.LogInformation($"Stopped drag!");
-		OnItemDragStop.InvokeAsync();
+		await OnItemDragStop.InvokeAsync();
 	}
 
-	async void OverHere()
+	async Task OverHere()
 	{
 		await OnItemOver.InvokeAsync(id);
 	}
 
-	void OuttaHere()
+	async Task OuttaHere()
 	{
 		Logger.LogInformation("AAAH ITS WORKING AGAIN"); // its not btw :( at least not universally
-		OnItemOut.InvokeAsync();
+		await OnItemOut.InvokeAsync();
 	}
 
 	public void Dispose()
 	{
-		item = null;
+		
 	}
 }
