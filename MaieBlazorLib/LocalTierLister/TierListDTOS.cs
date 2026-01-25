@@ -66,7 +66,7 @@ namespace MaieBlazorLib.LocalTierLister
             catch (FileNotFoundException)
             {
                 Debug.WriteLine($"File not found: {filename}.json");
-                return new List<TierList>();
+                throw new FileNotFoundException($"File not found: {filename}.json");
 
             }
             catch (Exception ex)
