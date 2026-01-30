@@ -3,6 +3,7 @@
 @using System.Collections
 @using Microsoft.Extensions.Logging
 @using MudBlazor
+@using Microsoft.AspNetCore.Components.Web.Virtualization
 @inject ILogger<TierListComp> Logger
 @inject IJSRuntime JSRuntime
 <link href="css/charactercolor.css" rel="stylesheet" />
@@ -93,40 +94,41 @@
 
 				<a class="d-flex flex-fill col-12 text-light" @ondrop="() => DropIntoTier(pair.Key)" @ondragover="() => OverTier(pair.Key)" @ondragover:preventDefault="true" @ondragleave="OuttaTier">
 					<div class="d-flex text-start flex-wrap col-12" style="border-top: solid; border-bottom: solid; border-color: @pair.Value.color">
-						@for (int local = 0; local < pair.Value.items.Count; local++)
-						{
-							int i = local;
-							@if (InFilter(pair.Value.items[i].name))
-							{
+						<Virtualize Items="GetFilteredItems(pair.Value)" ItemSize="100" TItem="TierItem">
+							<ItemContent Context="item">
+								@{
+									// compute index only when needed (IndexOf is O(n) but Virtualize limits rendered items)
+									var idx = pair.Value.items.IndexOf(item);
+								}
 								@if (showcase)
 								{
 									<MudTooltip class="col-2" Color="Color.Transparent">
 										<ChildContent>
-											<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(pair.Value.items[i] == DragDropApi<TierItem>.GetOver())"
-											OnItemSelect="Select" 
-											OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, i)" 
-											OnItemDragStop="StopDrag" 
-											OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, i)" 
-											OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
+											<TierItemComp item="@item" id="@idx" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(item == DragDropApi<TierItem>.GetOver())"
+														  OnItemSelect="Select"
+														  OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
+														  OnItemDragStop="StopDrag"
+														  OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
+														  OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
 										</ChildContent>
 										<TooltipContent>
 											<div class="text-light darken-95 rounded p-3 m-0">
-												@pair.Value.items[i].name
+												@item.name
 											</div>
 										</TooltipContent>
 									</MudTooltip>
 								}
 								else
 								{
-									<TierItemComp item="@pair.Value.items[i]" id="@i" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(pair.Value.items[i] == DragDropApi<TierItem>.GetOver())"
-									OnItemSelect="Select" 
-									OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, i)" 
-									OnItemDragStop="StopDrag" 
-									OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, i)" 
-									OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
+									<TierItemComp @key="item" item="@item" id="@idx" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(item == DragDropApi<TierItem>.GetOver())"
+												  OnItemSelect="Select"
+												  OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
+												  OnItemDragStop="StopDrag"
+												  OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
+												  OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
 								}
-							}
-						}
+							</ItemContent>
+						</Virtualize>
 						@if (!showcase)
 						{
 							if (minimal)
@@ -162,7 +164,7 @@
 @code
 {
 	[Parameter]
-	public required TierList? selected { get; set; }
+	public required TierList selected { get; set; }
 
 	[Parameter]
 	public TierLister? tl { get; set; } = null!;
@@ -235,6 +237,13 @@
 		return false;
 	}
 
+	ICollection<TierItem> GetFilteredItems(Tier tier)
+	{
+		if (string.IsNullOrEmpty(filter)) return tier.items;
+		// return a materialized list -- Virtualize performs better with IList-ish sources.
+		return tier.items.Where(x => InFilter(x.name)).ToList();
+	}
+
 	void Select(TierItem l)
 	{
 		selecitem = l;
@@ -262,26 +271,26 @@
 		}
 	}
 
-	void Exit()
+	async void Exit()
 	{
 		selecitem = null;
 		selectier = null;
 		selecitemtier = "";
-		TrySave();
+		await TrySave();
 	}
 
-	void Add(string key)
+	async void Add(string key)
 	{
 		TierItem temp = new TierItem("NEW ITEM,", selected.tiers[key]);
 		selected.tiers[key].Add(temp);
 		selecitem = temp;
-		TrySave();
+		await TrySave();
 	}
 
-	void NewTier()
+	async void NewTier()
 	{
 		selected.tiers.Add("New Tier", new Tier("New Tier", "#EAD21F"));
-		TrySave();
+		await TrySave();
 	}
 
 	void ChangeTierName(Tier tier)
@@ -289,7 +298,7 @@
 		ChangeTierName(tier.name, tier.ogname);
 	}
 
-	void ChangeTierName(string? neww, string old)
+	async void ChangeTierName(string? neww, string old)
 	{
 		Logger.LogInformation($"{neww}");
 		if (String.IsNullOrEmpty(neww)) return;
@@ -311,7 +320,7 @@
 		temp.name = neww;
 		temp.ogname = neww;
 		temp = null;
-		TrySave();
+		await TrySave();
 	}
 
 	void ChangeTierName(ChangeEventArgs e, string old)
@@ -353,8 +362,8 @@
 		try
 		{
 			#if ANDROID || WINDOWS || IOS || MACCATALYST
-			// Use native MAUI clipboard when running as a MAUI app (Android, Windows, iOS, MacCatalyst).
-			await Clipboard.SetTextAsync(json);
+	// Use native MAUI clipboard when running as a MAUI app (Android, Windows, iOS, MacCatalyst).
+	await Clipboard.SetTextAsync(json);
 			#else
 			// Fallback for browser/web: use navigator.clipboard via JS interop.
 			await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", json);
@@ -379,26 +388,26 @@
 		}
 	}
 
-	void Delete()
+	async void Delete()
 	{
 		if (selecitem == null) return;
 		selected.tiers[selecitemtier].items.Remove(selecitem);
 		selecitem = null;
 		selecitemtier = "";
 		YouSure();
-		TrySave();
+		await TrySave();
 	}
 
-	void DeleteTier()
+	async void DeleteTier()
 	{
 		if (selectier == null) return;
 		selected.tiers.Remove(selectier.ogname);
 		selectier = null;
 		YouSure();
-		TrySave();
+		await TrySave();
 	}
 
-	void StopDrag()
+	async void StopDrag()
 	{
 		//Logger.LogInformation("Overtier: "+overtier);
 		if (!String.IsNullOrEmpty(overtier))
@@ -411,7 +420,11 @@
 				var templist = selected.tiers[overtier];
 				selected.tiers[overtier].items.Insert(0, new TierItem("you shouldn't be seeing this,", selected.tiers[overtier]));
 				DragDropApi<TierItem>.OverHere(selected.tiers[overtier].items, 0);
-				if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace)) Logger.LogInformation("Failed tier item swap");
+				if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace)) 
+				{
+					Logger.LogInformation("Failed tier item swap");
+
+				}
 				else tempdragged.parent = templist;
 			}
 			else 
@@ -419,20 +432,31 @@
 				//Logger.LogInformation("Regular tieritem change!");
 				var temp1 = DragDropApi<TierItem>.GetDragged();
 				var temp2 = DragDropApi<TierItem>.GetOver();
-				if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert)) Logger.LogInformation("Failed tier item swap");
+				if (temp2 == null)
+				{
+					temp1.parent = selected.tiers[overtier];
+					selected.tiers[overtier].Add(temp1);
+					DragDropApi<TierItem>.GetDraggedList().Remove(temp1);
+					DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Cancel);
+				}
 				else
 				{
-					var temp3 = temp1.parent;
-					temp1.parent = temp2.parent;
-					temp2.parent = temp3;
-				}	
+					if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert)) Logger.LogInformation("Failed tier item swap");
+					else
+					{
+						var temp3 = temp1.parent;
+						temp1.parent = temp2.parent;
+						temp2.parent = temp3;
+					}
+				}
+				
 			}
 		}
 		else if (DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert))
 		{
 			Logger.LogInformation("DO YOU EVEN HEAR ME? DOES THIS CODE EVEN GET REACHED?");
 		}
-		TrySave();
+		await TrySave();
 		overtier = "";
 		StateHasChanged();
 	}
@@ -460,7 +484,6 @@
 
 	public void Dispose()
 	{
-		selected = default;
 		selectier = null;
 		selecitem = null;
 	}

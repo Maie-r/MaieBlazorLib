@@ -23,7 +23,7 @@ namespace MaieBlazorLib.LocalTierLister
             LoadStuff(link);
         }
 
-        public static TierList GetSpecificList(string link, string name)
+        public static TierList? GetSpecificList(string link, string name)
         {
             if (File.Exists(link))
             {
@@ -54,7 +54,7 @@ namespace MaieBlazorLib.LocalTierLister
         }
 
         // DEPRECATED
-        static async Task<List<TierList>> LoadFrom(string fileName)
+        static async Task<List<TierList>?> LoadFrom(string fileName)
         {
             List<TierList> TierLists = new List<TierList>();
 
@@ -382,13 +382,14 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public string name { get; set; }
         public string img { get; set; }
-        public Tier parent { get; set; }
+        public Tier? parent { get; set; }
 
         public TierItem() { }
 
         public TierItem(string name) 
         {
             this.name = name;
+            this.img = "";
         }
 
         public TierItem(string name, string img)
