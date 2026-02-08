@@ -104,9 +104,9 @@ namespace MaieBlazorLib.LocalTierLister
                 TierLists = TierListSaveData.LoadFrom(filename);
                 Debug.WriteLine(TierLists.Count);
             }
-            catch (NotImplementedException e)
+            catch (FileNotFoundException e)
             {
-                Debug.WriteLine(e.Message);
+                Debug.WriteLine("Attempting loading with legacy options...");
                 // Legacy fallback
                 try
                 {
@@ -123,10 +123,11 @@ namespace MaieBlazorLib.LocalTierLister
                     string[] tierlists = content.Split(';');
                     foreach (string tierlist in tierlists) // every tier list
                     {
-                        Debug.WriteLine("Ahoy!");
+                        //Debug.WriteLine("Ahoy!");
                         TierList temp = ReadList(tierlist);
                         TierLists.Add(temp);
                     }
+                    Debug.WriteLine("Loaded legacy data and parsed it into current structure successfully!");
                 }
                 catch (Exception ex)
                 {
@@ -134,7 +135,12 @@ namespace MaieBlazorLib.LocalTierLister
                     TierLists = new List<TierList>();
                 }
             }
-            
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Failed to load tierlists: " + ex.Message);
+                TierLists = new List<TierList>();
+            }
+
         }
 
         public List<TierList> LoadFromJson(string json)
