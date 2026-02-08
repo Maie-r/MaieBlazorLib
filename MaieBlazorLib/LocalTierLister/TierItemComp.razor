@@ -15,16 +15,41 @@
 		<img src="@item.img" draggable="false" @ondragleave="OuttaHere" alt="@item.name" class="@(isminimal ? "tieritemsmall": "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" @onerror="ImageFail" />
 	}
 </a>*@
-<a class="clickable draggable" draggable="true" @ondragover="OverHere" @ondragleave="OuttaHere" @onmousedown="(e) => StartDrag(e)" @ondragend="StopDrag">
-	@if (item.img == "" || NoImage)
-	{
-		<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
-	}
-	else
-	{
-		<img src="@item.img" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" loading="lazy" @onerror="ImageFail" />
-	}
-</a>
+
+@if(mobile)
+{
+	@*@onpointerover="OverHere" @onpointerout="OuttaHere" @onpointerdown="(e) => StartDrag(e)" @onpointercancel="StopDrag" @onpointerup="StopDrag"*@
+	<a class="clickable draggable" draggable="true" 
+	   data-tier-id="@id"
+	   @onpointerdown="StartDrag"
+	   @onpointerup="StopDrag"
+	   @onpointercancel="StopDrag"
+	   style="touch-action: none!important;">
+		@if (item.img == "" || NoImage)
+		{
+			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
+		}
+		else
+		{
+			<img src="@item.img" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" loading="lazy" @onerror="ImageFail" />
+		}
+	</a>
+}
+else
+{
+	@* WORKS ON DESKTOP *@
+	<a class="clickable draggable" draggable="true" @ondragover="OverHere" @ondragleave="OuttaHere" @onmousedown="(e) => StartDrag(e)" @ondragend="StopDrag">
+		@if (item.img == "" || NoImage)
+		{
+			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
+		}
+		else
+		{
+			<img src="@item.img" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" loading="lazy" @onerror="ImageFail" />
+		}
+	</a>
+}
+
 <script src="imageHandler.js"></script>
 <style>
 	.OverItem{
@@ -61,6 +86,18 @@
 
 	bool imageLoaded = true;
 
+	bool mobile = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
+		//Logger.LogInformation(id.ToString());
+		/*if (mobile)
+			Logger.LogInformation("U R ON MOBILE!! PHONE USERR!!!! SCREENTOUCHER!!!");
+		else
+			Logger.LogInformation("U R ON DESKTOP!! MOUSE USERRR!!! SCREENCURSOR!!!");//*/
+	}
+
 	void ImageFail()
 	{
 		imageLoaded = false;
@@ -88,8 +125,9 @@
 		return $"font-size: {size.ToString("F2", CultureInfo.InvariantCulture)}px";
 	}
 
-	void StartDrag(MouseEventArgs e) // Characacter Draggin'
+	void StartDrag(MouseEventArgs e) // Draggin'
 	{
+		//Console.Beep();
 		Logger.LogInformation($"Started drag with {item.name} from tier {item.parent.ogname}! {e.Button}");
 		if (e.Buttons == 2) // right click
 			OnItemSelect.InvokeAsync(item);
@@ -101,12 +139,13 @@
 
 	async Task StopDrag(MouseEventArgs e)
 	{
-		//Logger.LogInformation($"Stopped drag!");
+		Logger.LogInformation($"Stopped drag!");
 		await OnItemDragStop.InvokeAsync();
 	}
 
 	async Task OverHere()
 	{
+		Logger.LogInformation($"pointer over {item.name}");
 		await OnItemOver.InvokeAsync(id);
 	}
 

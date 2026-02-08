@@ -92,7 +92,12 @@
 				</textarea>*@
 				 
 
-				<a class="d-flex flex-fill col-12 text-light" @ondrop="() => DropIntoTier(pair.Key)" @ondragover="() => OverTier(pair.Key)" @ondragover:preventDefault="true" @ondragleave="OuttaTier">
+				<a class="d-flex flex-fill col-12 text-light" 
+				@ondrop="() => DropIntoTier(pair.Key)" 
+				@ondragover="() => OverTier(pair.Key)" 
+				@ondragover:preventDefault="true" 
+				@onpointermove="(e) => OnPointerMove(e, pair)"
+				@ondragleave="OuttaTier">
 					<div class="d-flex text-start flex-wrap col-12" style="border-top: solid; border-bottom: solid; border-color: @pair.Value.color">
 						<Virtualize Items="GetFilteredItems(pair.Value)" ItemSize="100" TItem="TierItem">
 							<ItemContent Context="item">
@@ -159,6 +164,12 @@
 </div>
 
 <script src="imageHandler.js"></script>
+<script>
+		window.getTierIdAtPoint = (x, y) => {
+		const el = document.elementFromPoint(x, y);
+		return el?.closest("[data-tier-id]")?.dataset.tierId ?? null;
+	};
+</script>
 
 
 @code
@@ -191,6 +202,13 @@
 	public bool minimal { get; set; }
 	[Parameter]
 	public bool NoImg { get; set; }
+
+	bool mobile;
+
+	protected override async Task OnInitializedAsync()
+	{
+		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
+	}
 
 	string filter = "";
 	string temptiername = "";
@@ -367,6 +385,7 @@
 			#else
 			// Fallback for browser/web: use navigator.clipboard via JS interop.
 			await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", json);
+			Logger.LogInformation("exported by fallback.");
 			#endif
 			Logger.LogInformation("Exported JSON copied to clipboard.");
 			await OnExport.InvokeAsync(json);
@@ -412,22 +431,17 @@
 		//Logger.LogInformation("Overtier: "+overtier);
 		if (!String.IsNullOrEmpty(overtier))
 		{
-			if (DragDropApi<TierItem>.GetOver() != null && DragDropApi<TierItem>.GetOver().parent != selected.tiers[overtier] && selected.tiers[overtier].items.Count <= 0) // it just failed to remove the dragover item, so going to the tierlist is priority
+			if (DragDropApi<TierItem>.GetDragged() == null)
 			{
-				Logger.LogInformation("Tried to put over an empty tier!");
-				//Logger.LogInformation(DragDropApi<TierItem>.GetOver().parent.name + " != " + selected.tiers[overtier].name);
-				var tempdragged = DragDropApi<TierItem>.GetDragged();
-				var templist = selected.tiers[overtier];
-				selected.tiers[overtier].items.Insert(0, new TierItem("you shouldn't be seeing this,", selected.tiers[overtier]));
-				DragDropApi<TierItem>.OverHere(selected.tiers[overtier].items, 0);
-				if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace)) 
-				{
-					Logger.LogInformation("Failed tier item swap");
-
-				}
-				else tempdragged.parent = templist;
+				Logger.LogInformation("Couldn't perform dragdrop Operation: No Dragged Item found!!");
+				return;
 			}
-			else 
+			if (DragDropApi<TierItem>.GetOver() == null)
+			{
+				Logger.LogInformation("Couldn't perform dragdrop Operation: No Over Item found!!");
+				if (String.IsNullOrEmpty(overtier)) return;
+			}
+			else if (DragDropApi<TierItem>.GetOver().parent == selected.tiers[overtier])
 			{
 				//Logger.LogInformation("Regular tieritem change!");
 				var temp1 = DragDropApi<TierItem>.GetDragged();
@@ -449,7 +463,22 @@
 						temp2.parent = temp3;
 					}
 				}
-				
+			}
+			else
+			{
+				// DragDropApi<TierItem>.GetOver().parent != selected.tiers[overtier] && selected.tiers[overtier].items.Count <= 0  it just failed to remove the dragover item, so going to the tierlist is priority
+				Logger.LogInformation("Tried to put over an empty tier!");
+				//Logger.LogInformation(DragDropApi<TierItem>.GetOver().parent.name + " != " + selected.tiers[overtier].name);
+				var tempdragged = DragDropApi<TierItem>.GetDragged();
+				var templist = selected.tiers[overtier];
+				selected.tiers[overtier].items.Insert(0, new TierItem("you shouldn't be seeing this,", selected.tiers[overtier]));
+				DragDropApi<TierItem>.OverHere(selected.tiers[overtier].items, 0);
+				if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace))
+				{
+					Logger.LogInformation("Failed tier item swap");
+
+				}
+				else tempdragged!.parent = templist;
 			}
 		}
 		else if (DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert))
@@ -459,6 +488,41 @@
 		await TrySave();
 		overtier = "";
 		StateHasChanged();
+	}
+
+	async Task OnPointerMove(PointerEventArgs e, KeyValuePair<string, Tier> pair) // Mobile only implementation
+	{
+		if (DragDropApi<TierItem>.GetDragged() == null || !mobile) return;
+
+		//Logger.LogInformation($"Pointer moved at {e.ClientX}, {e.ClientY}");
+
+		var overId = await JSRuntime.InvokeAsync<string>(
+			"getTierIdAtPoint",
+			e.ClientX,
+			e.ClientY
+		);
+
+		if (overId == null)
+		{
+			if (DragDropApi<TierItem>.GetOver() != null)
+				DragDropApi<TierItem>.OuttaHere();
+			return;
+		}
+
+		var idx = int.Parse(overId);
+
+		if (DragDropApi<TierItem>.GetOverIndex() == idx)
+			return;
+
+		//currentOverIndex = idx;
+
+		// IMPORTANT:
+		// Virtualize means idx maps to the tier list you passed into TierItemComp
+		// so this is safe
+		DragDropApi<TierItem>.OverHere(
+			pair.Value.items,
+			idx
+		);
 	}
 
 	void OverTier(string tier)
@@ -479,6 +543,7 @@
 	{
 		Logger.LogInformation($"Mouse dropped over {Tier} tier!");
 		overtier = Tier;
+		if (mobile) StopDrag();
 		StateHasChanged();
 	}
 
