@@ -382,6 +382,17 @@ namespace MaieBlazorLib.LocalTierLister
         {
             items.Add(item);
         }
+
+        public string AsString()
+        {
+            string res = "";
+            res += $"Tier {name} (ogname {ogname}), color {color} with {items.Count} items";
+            foreach (var i in items)
+            {
+                res += "\n" + i.AsString();
+            }
+            return res;
+        }
     }
 
     public class TierItem
@@ -402,6 +413,11 @@ namespace MaieBlazorLib.LocalTierLister
         {
             this.name = name;
             this.img = img;
+        }
+
+        public string AsString()
+        {
+            return $"TierItem {name}, img link: {img} " + (parent == null ? "No parent" : $"parent {parent!.name}");
         }
 
         //DEPRECATED

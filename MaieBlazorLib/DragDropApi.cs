@@ -66,6 +66,7 @@ namespace MaieBlazorLib
                             Debug.WriteLine("DragDropBehavior error: " + e.Message);
                         }
                         Clear();
+                        Debug.WriteLine($"DragDrop operation successful with behaviour {behaviour.GetType().Name}");
                         return true;
                     }
                     else Debug.WriteLine($"DragDrop failed: Invalid list index for Dragged item or Hovered item");
@@ -200,9 +201,9 @@ namespace MaieBlazorLib
     internal class DragDropBehaviourSwap : IDragDropBehaviour
     {
         public static readonly DragDropBehaviourSwap Instance = new();
-        public void Behave<T>((IList<T> List, int Index)?Dragged, (IList<T> List, int Index)?Over) // not yet tested
+        public void Behave<T>((IList<T> List, int Index)?Dragged, (IList<T> List, int Index)?Over) 
         {
-            Debug.WriteLine($"Switcheroo!");
+            //Debug.WriteLine($"Switcheroo!");
             var temp = Over!.Value.List[Over.Value.Index];
             Over.Value.List[Over.Value.Index] = Dragged!.Value.List[Dragged.Value.Index];
             Dragged.Value.List[Dragged.Value.Index] = temp;
@@ -212,9 +213,9 @@ namespace MaieBlazorLib
     internal class DragDropBehaviourInsert : IDragDropBehaviour
     {
         public static readonly DragDropBehaviourInsert Instance = new();
-        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over)
         {
-            Debug.WriteLine($"Insertooo!");
+            // Debug.WriteLine($"Insertooo!");
             T temp = Dragged!.Value.List[Dragged.Value.Index];
             Dragged.Value.List.RemoveAt(Dragged.Value.Index);
             Over!.Value.List.Insert(Over.Value.Index, temp);
@@ -224,9 +225,9 @@ namespace MaieBlazorLib
     internal class DragDropBehaviourPush : IDragDropBehaviour
     {
         public static readonly DragDropBehaviourPush Instance = new();
-        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over)
         {
-            Debug.WriteLine($"Insertooo!");
+            //Debug.WriteLine($"Insertooo!");
             T temp = Dragged!.Value.List[Dragged.Value.Index];
             Dragged.Value.List.RemoveAt(Dragged.Value.Index);
             Over!.Value.List.Insert(0, temp);
@@ -236,9 +237,9 @@ namespace MaieBlazorLib
     internal class DragDropBehaviourAdd : IDragDropBehaviour
     {
         public static readonly DragDropBehaviourAdd Instance = new();
-        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over)
         {
-            Debug.WriteLine($"Insertooo!");
+            //Debug.WriteLine($"Insertooo!");
             T temp = Dragged!.Value.List[Dragged.Value.Index];
             Dragged!.Value.List.RemoveAt(Dragged.Value.Index);
             Over!.Value.List.Add(temp);
@@ -248,9 +249,9 @@ namespace MaieBlazorLib
     internal class DragDropBehaviourInsertAfter : IDragDropBehaviour
     {
         public static readonly DragDropBehaviourInsertAfter Instance = new();
-        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over)
         {
-            Debug.WriteLine($"Insertooo Afterooo!");
+            //Debug.WriteLine($"Insertooo Afterooo!");
             T temp = Dragged!.Value.List[Dragged.Value.Index];
             Dragged.Value.List.RemoveAt(Dragged.Value.Index);
             if (Over!.Value.Index >= Over.Value.List.Count - 1)
@@ -263,9 +264,9 @@ namespace MaieBlazorLib
     internal class DragDropBehaviourReplace : IDragDropBehaviour
     {
         public static readonly DragDropBehaviourReplace Instance = new();
-        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over)
         {
-            Debug.WriteLine($"Replasooo!");
+            //Debug.WriteLine($"Replasooo!");
             Over!.Value.List[Over.Value.Index] = Dragged!.Value.List[Dragged.Value.Index];
             Dragged.Value.List.RemoveAt(Dragged.Value.Index);
         }
@@ -274,9 +275,9 @@ namespace MaieBlazorLib
     internal class DragDropBehaviourCopy : IDragDropBehaviour
     {
         public static readonly DragDropBehaviourCopy Instance = new();
-        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over)
         {
-            Debug.WriteLine($"Copyooo!");
+            //Debug.WriteLine($"Copyooo!");
             Over!.Value.List[Over.Value.Index] = Dragged!.Value.List[Dragged.Value.Index];
         }
     }
@@ -284,7 +285,7 @@ namespace MaieBlazorLib
     internal class DragDropBehaviourCancel : IDragDropBehaviour
     {
         public static readonly DragDropBehaviourCopy Instance = new();
-        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over) // not yet tested
+        public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over)
         {
             Debug.WriteLine($"Cancelled DragDrop operation");
         }

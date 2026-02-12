@@ -12,24 +12,24 @@
 	@if (selecitem != null)
 	{
 		<div class="maiedal">
-			<div class="d-flex col-8 rounded darken-95 flex-column mx-auto my-auto">
+			<div class="d-flex col-12 ol-md-8 rounded darken-95 flex-column mx-auto my-auto shadow">
 				<div class="d-flex p-4 text-end justify-content-end">
 					<a class="clickable" @onclick="Exit">✖</a>
 				</div>
 				<img class="text-center d-flex mx-auto my-2" src="@selecitem.img" style="max-height: 400px; max-width: 400px"/>
-				<input type="text" class="spinput rounded flex-fill text-light p-2" @bind="@selecitem.name" placeholder="Item Name">
-				<input type="text" class="spinput rounded flex-fill text-light p-2" @bind="@selecitem.img" placeholder="Image Link">
-				<button class="mx-2 text-danger" @onclick="YouSure">Remove</button>
+				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.name" placeholder="Item Name">
+				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.img" placeholder="Image Link">
+				<button class="bg-danger rounded m-2 p-1" @onclick="YouSure">Remove</button>
 			</div>
 		</div>
 		@if (yousure)
 		{
 			<div class="maiedal d-flex flex-column text-center justify-content-center">
-				<div class="p-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-6">
+				<div class="p-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-10 col-md-6 border-2 shadow border-light">
 					<p> Are you sure you want to permanently remove this item? </p>
 					<div class="d-flex flex-row flex-wrap mx-auto">
 						<button class="mx-2 text-light" @onclick="YouSure">No</button>
-						<button class="mx-2 text-danger" @onclick="Delete">Yes, remove it</button>
+						<button class="mx-2 rounded p-1 bg-danger" @onclick="Delete">Yes, remove it</button>
 					</div>
 				</div>
 			</div>
@@ -38,7 +38,7 @@
 	@if (selectier != null)
 	{
 		<div class="maiedal">
-			<div class="p-2 d-flex col-8 rounded darken-95 flex-column mx-auto my-auto">
+			<div class="p-0 p-md-2 d-flex col-12 col-md-8 rounded darken-95 flex-column mx-auto my-auto">
 				<div class="d-flex p-4 text-end justify-content-end">
 					<a class="clickable" @onclick="Exit">✖</a>
 				</div>
@@ -52,7 +52,7 @@
 		@if (yousure)
 		{
 			<div class="maiedal d-flex flex-column text-center justify-content-center">
-				<div class="p-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-6">
+				<div class="p-0 p-md-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-6">
 					<h5> Are you sure you want to permanently remove this tier? All items will be deleted with it!</h5>
 					<div class="d-flex flex-row flex-wrap mx-auto">
 						<button class="mx-2 text-light" @onclick="YouSure">No</button>
@@ -77,7 +77,8 @@
 		</div>
 		@foreach (var pair in selected.tiers)
 		{
-			<div class="p-0 m-0 d-flex darken-25 flex-md-row @(minimal ? "flex-sm-row" : "flex-column") col-12">
+			<div class="p-0 m-0 d-flex darken-25 flex-md-row @(minimal ? "flex-sm-row" : "flex-column") col-12"
+				 data-tier-id="@pair.Key">
 				<a class="text-box-container d-flex clickable text-center justify-content-center @(minimal ? "col-1 flex-row" : "flex-row") align-items-center py-1 py-sm-1 py-md-auto me-1" @onmousedown="(e) => SelectTier(e, pair.Key)" style="background-color: @pair.Value.color">
 					<input type="text" value="@pair.Value.name" class="tierput rounded d-flex py-md-auto p-1 m-0 flex-fill text-wrap overflow-visible text-break text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Key)" placeholder="Tier Title" style="@GetFontSize(pair.Value.name); white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
 					@*<MudTextField @bind-Value="pair.Value.name" T="string" Text="@pair.Value.name" Variant="Variant.Outlined" @onblur="() => ChangeTierName(pair.Value)" AutoGrow Lines="4" Class="d-flex flex-column text-center justify-content-center text-light border-0" Style="@GetFontSize(pair.Value.name)"></MudTextField>*@
@@ -162,12 +163,59 @@
 		</div>
 	</div>
 </div>
+<div id="drag-ghost-container"></div>
 
 <script src="imageHandler.js"></script>
 <script>
-		window.getTierIdAtPoint = (x, y) => {
+	window.getTierItemIdAtPoint = (x, y) => {
+		const el = document.elementFromPoint(x, y);
+		return el?.closest("[data-tieritem-id]")?.dataset.tieritemId ?? null;
+	};
+
+	window.getTierIdAtPoint = (x, y) => {
 		const el = document.elementFromPoint(x, y);
 		return el?.closest("[data-tier-id]")?.dataset.tierId ?? null;
+	};
+
+	window.dragGhost = {
+		ghost: null,
+
+		create: function (element, x, y) {
+			this.remove();
+
+			const rect = element.getBoundingClientRect();
+			const clone = element.cloneNode(true);
+
+			clone.style.position = "fixed";
+			clone.style.left = rect.left + "px";
+			clone.style.top = rect.top + "px";
+			clone.style.width = rect.width + "px";
+			clone.style.height = rect.height + "px";
+			clone.style.pointerEvents = "none!important";
+			clone.style.opacity = "0.8";
+			clone.style.zIndex = "9999";
+			clone.style.transform = "scale(1.05)";
+			clone.style.transition = "none";
+			clone.style.willChange = "transform";
+
+			document.body.appendChild(clone);
+
+			this.ghost = clone;
+		},
+
+		move: function (x, y) {
+			if (!this.ghost) return;
+
+			this.ghost.style.left = (x - this.ghost.offsetWidth / 2) + "px";
+			this.ghost.style.top = (y - this.ghost.offsetHeight / 2) + "px";
+		},
+
+		remove: function () {
+			if (this.ghost) {
+				this.ghost.remove();
+				this.ghost = null;
+			}
+		}
 	};
 </script>
 
@@ -264,13 +312,13 @@
 
 	void Select(TierItem l)
 	{
-		selecitem = l;
-		selecitemtier = l.parent.ogname;
-		selectier = null;
+		Select(l, l.parent.ogname);
 	}
 
 	void Select(TierItem i, string key)
 	{
+		//Logger.LogInformation($"Youre showcase is: Damn {showcase}");
+		if (mobile && showcase) return; // So they don't edit accidentally when scrolling
 		selecitem = i;
 		selecitemtier = key;
 		selectier = null;
@@ -289,7 +337,7 @@
 		}
 	}
 
-	async void Exit()
+	async Task Exit()
 	{
 		selecitem = null;
 		selectier = null;
@@ -297,7 +345,7 @@
 		await TrySave();
 	}
 
-	async void Add(string key)
+	async Task Add(string key)
 	{
 		TierItem temp = new TierItem("NEW ITEM,", selected.tiers[key]);
 		selected.tiers[key].Add(temp);
@@ -305,18 +353,18 @@
 		await TrySave();
 	}
 
-	async void NewTier()
+	async Task NewTier()
 	{
 		selected.tiers.Add("New Tier", new Tier("New Tier", "#EAD21F"));
 		await TrySave();
 	}
 
-	void ChangeTierName(Tier tier)
+	async Task ChangeTierName(Tier tier)
 	{
-		ChangeTierName(tier.name, tier.ogname);
+		await ChangeTierName(tier.name, tier.ogname);
 	}
 
-	async void ChangeTierName(string? neww, string old)
+	async Task ChangeTierName(string? neww, string old)
 	{
 		Logger.LogInformation($"{neww}");
 		if (String.IsNullOrEmpty(neww)) return;
@@ -348,7 +396,7 @@
 		temptiername = "";
 	}
 
-	async void StoreTierName(ChangeEventArgs e)
+	async Task StoreTierName(ChangeEventArgs e)
 	{
 		//temptiername = neww;
 		string h = await JSRuntime.InvokeAsync<string>("getPlainText", temptiername);
@@ -368,7 +416,7 @@
 		yousure = !yousure;
 	}
 
-	async void Export()
+	async Task Export()
 	{
 		var json = TierLister.ExportJson(selected);
 		if (string.IsNullOrEmpty(json))
@@ -407,7 +455,7 @@
 		}
 	}
 
-	async void Delete()
+	async Task Delete()
 	{
 		if (selecitem == null) return;
 		selected.tiers[selecitemtier].items.Remove(selecitem);
@@ -417,7 +465,7 @@
 		await TrySave();
 	}
 
-	async void DeleteTier()
+	async Task DeleteTier()
 	{
 		if (selectier == null) return;
 		selected.tiers.Remove(selectier.ogname);
@@ -426,66 +474,81 @@
 		await TrySave();
 	}
 
-	async void StopDrag()
+	async Task StopDrag()
 	{
 		//Logger.LogInformation("Overtier: "+overtier);
-		if (!String.IsNullOrEmpty(overtier))
+		var dragged = DragDropApi<TierItem>.GetDragged();
+		if (dragged == null)
 		{
-			if (DragDropApi<TierItem>.GetDragged() == null)
+			Logger.LogInformation("Couldn't perform dragdrop Operation: No Dragged Item found!!");
+			return;
+		}
+		var over = DragDropApi<TierItem>.GetOver();
+
+
+		if (!String.IsNullOrEmpty(overtier) && selected.tiers.ContainsKey(overtier))
+		{
+			var OverTier = selected.tiers[overtier];
+			if (over != null)
 			{
-				Logger.LogInformation("Couldn't perform dragdrop Operation: No Dragged Item found!!");
-				return;
-			}
-			if (DragDropApi<TierItem>.GetOver() == null)
-			{
-				Logger.LogInformation("Couldn't perform dragdrop Operation: No Over Item found!!");
-				if (String.IsNullOrEmpty(overtier)) return;
-			}
-			else if (DragDropApi<TierItem>.GetOver().parent == selected.tiers[overtier])
-			{
-				//Logger.LogInformation("Regular tieritem change!");
-				var temp1 = DragDropApi<TierItem>.GetDragged();
-				var temp2 = DragDropApi<TierItem>.GetOver();
-				if (temp2 == null)
+				if (over == dragged && over.parent != OverTier) // fallback
 				{
-					temp1.parent = selected.tiers[overtier];
-					selected.tiers[overtier].Add(temp1);
-					DragDropApi<TierItem>.GetDraggedList().Remove(temp1);
+					Logger.LogInformation("Unrecognised OverItem Fallback DragDrop");
+					dragged.parent = OverTier;
+					OverTier.Add(dragged);
+					DragDropApi<TierItem>.GetDraggedList()!.Remove(dragged);
 					DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Cancel);
-				}
+				}//*/
 				else
 				{
-					if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert)) Logger.LogInformation("Failed tier item swap");
+					Logger.LogInformation("Regular tieritem DragDrop!");
+					if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert)) Logger.LogInformation("DragDop Failed: Recognised items, but failed operation");
 					else
 					{
-						var temp3 = temp1.parent;
-						temp1.parent = temp2.parent;
-						temp2.parent = temp3;
+						var temp3 = dragged.parent;
+						dragged.parent = over.parent;
+						over.parent = temp3;
 					}
 				}
+
+				
 			}
-			else
+			else //if (dragged == over || over.parent != selected.tiers[overtier])
 			{
 				// DragDropApi<TierItem>.GetOver().parent != selected.tiers[overtier] && selected.tiers[overtier].items.Count <= 0  it just failed to remove the dragover item, so going to the tierlist is priority
-				Logger.LogInformation("Tried to put over an empty tier!");
+				Logger.LogInformation("Regular Tier-Based DragDrop!");
 				//Logger.LogInformation(DragDropApi<TierItem>.GetOver().parent.name + " != " + selected.tiers[overtier].name);
 				var tempdragged = DragDropApi<TierItem>.GetDragged();
-				var templist = selected.tiers[overtier];
-				selected.tiers[overtier].items.Insert(0, new TierItem("you shouldn't be seeing this,", selected.tiers[overtier]));
-				DragDropApi<TierItem>.OverHere(selected.tiers[overtier].items, 0);
+				//Logger.LogInformation("Got Dragged");
+				var overlist = selected.tiers[overtier];
+				Logger.LogInformation($"got list {overlist.name}");
+				overlist.items.Add(new TierItem("you shouldn't be seeing this,", overlist));
+				//Logger.LogInformation("Added dummy element");
+				DragDropApi<TierItem>.OverHere(overlist.items, overlist.items.Count - 1);
+				//Logger.LogInformation("Forced over dummy element");
 				if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace))
 				{
 					Logger.LogInformation("Failed tier item swap");
-
 				}
-				else tempdragged!.parent = templist;
+				else 
+					tempdragged!.parent = overlist;
+
+				//Logger.LogInformation(overlist.AsString());
+
 			}
 		}
-		else if (DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert))
+		else if (over != null)
 		{
-			Logger.LogInformation("DO YOU EVEN HEAR ME? DOES THIS CODE EVEN GET REACHED?");
+			if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert))
+				Logger.LogInformation("DragDrop Failed: Couldn't recognise over tier, and failed fallback method");
+			else Logger.LogInformation("Fallback Tier-Based DragDrop");
+		}
+		else
+		{
+			Logger.LogInformation("DragDrop Failed: Couldn't recognise Overtier nor Over item");
 		}
 		await TrySave();
+		if (mobile) await JSRuntime.InvokeVoidAsync("dragGhost.remove");
 		overtier = "";
 		StateHasChanged();
 	}
@@ -497,32 +560,60 @@
 		//Logger.LogInformation($"Pointer moved at {e.ClientX}, {e.ClientY}");
 
 		var overId = await JSRuntime.InvokeAsync<string>(
+			"getTierItemIdAtPoint",
+			e.ClientX,
+			e.ClientY
+		);
+
+		var overTierId = await JSRuntime.InvokeAsync<string>(
 			"getTierIdAtPoint",
 			e.ClientX,
 			e.ClientY
 		);
 
+		await JSRuntime.InvokeVoidAsync(
+			"dragGhost.move",
+			e.ClientX,
+			e.ClientY
+		);
+
+		if (overTierId == null)
+		{
+			if (!String.IsNullOrEmpty(overtier))
+				overtier = "";
+		}
+		else if (overtier != overTierId)
+		{
+			Logger.LogInformation($"Pointer is over Tier id: {overTierId}");
+			OverTier(overTierId);
+		}
+
 		if (overId == null)
 		{
 			if (DragDropApi<TierItem>.GetOver() != null)
 				DragDropApi<TierItem>.OuttaHere();
-			return;
+		}
+		else
+		{
+			var idx = int.Parse(overId);
+
+			if (DragDropApi<TierItem>.GetOverIndex() == idx)
+				return;
+
+			Logger.LogInformation($"Pointer is over TierItem id: {overId} (which is in Tier {pair.Key} )");
+
+			//currentOverIndex = idx;
+
+			// IMPORTANT:
+			// Virtualize means idx maps to the tier list you passed into TierItemComp
+			// so this is safe
+			if (String.IsNullOrEmpty(overtier))
+				DragDropApi<TierItem>.OverHere(pair.Value.items, idx);
+			else
+				DragDropApi<TierItem>.OverHere(selected.tiers[overtier].items, idx);
 		}
 
-		var idx = int.Parse(overId);
-
-		if (DragDropApi<TierItem>.GetOverIndex() == idx)
-			return;
-
-		//currentOverIndex = idx;
-
-		// IMPORTANT:
-		// Virtualize means idx maps to the tier list you passed into TierItemComp
-		// so this is safe
-		DragDropApi<TierItem>.OverHere(
-			pair.Value.items,
-			idx
-		);
+		
 	}
 
 	void OverTier(string tier)
@@ -534,7 +625,7 @@
 
 	void OuttaTier(MouseEventArgs e)
 	{
-		Logger.LogInformation($"Mouse out (tier)!");
+		//Logger.LogInformation($"Mouse out (tier)!");
 		overtier = "";
 		StateHasChanged();
 	}

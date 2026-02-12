@@ -19,15 +19,16 @@
 @if(mobile)
 {
 	@*@onpointerover="OverHere" @onpointerout="OuttaHere" @onpointerdown="(e) => StartDrag(e)" @onpointercancel="StopDrag" @onpointerup="StopDrag"*@
-	<a class="clickable draggable" draggable="true" 
-	   data-tier-id="@id"
+	<a class="clickable draggable" draggable="false" 
+	   @ref="elementRef"
+	   data-tieritem-id="@id"
 	   @onpointerdown="StartDrag"
 	   @onpointerup="StopDrag"
 	   @onpointercancel="StopDrag"
 	   style="touch-action: none!important;">
 		@if (item.img == "" || NoImage)
 		{
-			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
+			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") unselectable rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
 		}
 		else
 		{
@@ -51,15 +52,26 @@ else
 }
 
 <script src="imageHandler.js"></script>
+<script>
+
+</script>
 <style>
 	.OverItem{
 		opacity: 0.5;
+	}
+
+	.unselectable {
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
 	}
 </style>
 
 @code {
 	[Parameter]
-	public TierItem item { get; set; }
+	public required TierItem item { get; set; }
 
 	[Parameter]
 	public int id { get; set; }
@@ -84,6 +96,13 @@ else
 	[Parameter]
 	public EventCallback OnItemOut { get; set; }
 
+	// Mobile drag threshold 
+	CancellationTokenSource? dragDelayCts;
+	bool dragArmed = false;
+	bool dragStarted = false;
+	int dragthreshold = 500; // ms
+	ElementReference elementRef;
+
 	bool imageLoaded = true;
 
 	bool mobile = false;
@@ -93,7 +112,7 @@ else
 		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
 		//Logger.LogInformation(id.ToString());
 		/*if (mobile)
-			Logger.LogInformation("U R ON MOBILE!! PHONE USERR!!!! SCREENTOUCHER!!!");
+		Logger.LogInformation("U R ON MOBILE!! PHONE USERR!!!! SCREENTOUCHER!!!");
 		else
 			Logger.LogInformation("U R ON DESKTOP!! MOUSE USERRR!!! SCREENCURSOR!!!");//*/
 	}
@@ -125,21 +144,65 @@ else
 		return $"font-size: {size.ToString("F2", CultureInfo.InvariantCulture)}px";
 	}
 
-	void StartDrag(MouseEventArgs e) // Draggin'
+	async Task StartDrag(MouseEventArgs e) // Draggin'
 	{
 		//Console.Beep();
 		Logger.LogInformation($"Started drag with {item.name} from tier {item.parent.ogname}! {e.Button}");
-		if (e.Buttons == 2) // right click
-			OnItemSelect.InvokeAsync(item);
+
+		if (mobile)
+		{
+			dragStarted = false;
+			dragArmed = true;
+
+			dragDelayCts?.Cancel();
+			dragDelayCts = new CancellationTokenSource();
+
+			try
+			{
+				// long-press threshold (tweak this)
+				await Task.Delay(dragthreshold, dragDelayCts.Token);
+
+				if (!dragArmed)
+					return;
+
+				dragStarted = true;
+
+				/*Logger.LogInformation("DRAGDELAY: Pointer passed threshold, Dragging!");
+				await JSRuntime.InvokeVoidAsync(
+					"dragGhost.create",
+					elementRef,
+					e.ClientX,
+					e.ClientY
+				);//*/
+				await OnItemDrag.InvokeAsync(item);
+			}
+			catch (TaskCanceledException)
+			{
+				Logger.LogInformation("DRAGDELAY: Pointer released early! Editing item instead");
+				await OnItemSelect.InvokeAsync(item);
+			}
+		}
+		else if (e.Buttons == 2) // right click
+			await OnItemSelect.InvokeAsync(item);
 		else
 		{
-			OnItemDrag.InvokeAsync(item);
+			await OnItemDrag.InvokeAsync(item);
 		}
 	}
 
 	async Task StopDrag(MouseEventArgs e)
 	{
 		Logger.LogInformation($"Stopped drag!");
+		if (mobile)
+		{
+			dragArmed = false;
+			dragDelayCts?.Cancel();
+
+			if (!dragStarted)
+				return;
+
+			dragStarted = false;
+		}
 		await OnItemDragStop.InvokeAsync();
 	}
 
