@@ -191,7 +191,7 @@
 			clone.style.top = rect.top + "px";
 			clone.style.width = rect.width + "px";
 			clone.style.height = rect.height + "px";
-			clone.style.pointerEvents = "none!important";
+			clone.style.pointerEvents = "none";
 			clone.style.opacity = "0.8";
 			clone.style.zIndex = "9999";
 			clone.style.transform = "scale(1.05)";
@@ -511,7 +511,7 @@
 					}
 				}
 
-				
+
 			}
 			else //if (dragged == over || over.parent != selected.tiers[overtier])
 			{
@@ -548,14 +548,26 @@
 			Logger.LogInformation("DragDrop Failed: Couldn't recognise Overtier nor Over item");
 		}
 		await TrySave();
-		if (mobile) await JSRuntime.InvokeVoidAsync("dragGhost.remove");
+		if (mobile)
+		{
+			await JSRuntime.InvokeVoidAsync("dragGhost.remove");
+			if (DragDropApi<TierItem>.GetOver() != null)
+			{
+				Logger.LogInformation("Over Item is still " + DragDropApi<TierItem>.GetOver()!.name);
+				DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Cancel);
+			}
+		}
 		overtier = "";
 		StateHasChanged();
+
+
 	}
 
 	async Task OnPointerMove(PointerEventArgs e, KeyValuePair<string, Tier> pair) // Mobile only implementation
 	{
 		if (DragDropApi<TierItem>.GetDragged() == null || !mobile) return;
+
+		//Logger.LogInformation("Still draggin " + DragDropApi<TierItem>.GetDragged().name);
 
 		//Logger.LogInformation($"Pointer moved at {e.ClientX}, {e.ClientY}");
 
@@ -582,7 +594,7 @@
 			if (!String.IsNullOrEmpty(overtier))
 				overtier = "";
 		}
-		else if (overtier != overTierId)
+		else if (overtier != overTierId && DragDropApi<TierItem>.GetDragged() == null) // Have to recheck for async reasons
 		{
 			Logger.LogInformation($"Pointer is over Tier id: {overTierId}");
 			OverTier(overTierId);
@@ -597,10 +609,10 @@
 		{
 			var idx = int.Parse(overId);
 
-			if (DragDropApi<TierItem>.GetOverIndex() == idx)
+			if (DragDropApi<TierItem>.GetOverIndex() == idx || DragDropApi<TierItem>.GetDragged() == null) // Have to recheck for async reasons
 				return;
 
-			Logger.LogInformation($"Pointer is over TierItem id: {overId} (which is in Tier {pair.Key} )");
+			Logger.LogInformation($"Pointer is over TierItem id: {overId} (which is in Tier {overTierId} )");
 
 			//currentOverIndex = idx;
 

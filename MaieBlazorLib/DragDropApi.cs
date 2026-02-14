@@ -79,6 +79,7 @@ namespace MaieBlazorLib
             catch (Exception e)
             {
                 Debug.WriteLine($"Unhandled DragDrop operation error: {e.Message}");
+                Clear();
                 return false;
             }
         }
@@ -100,6 +101,7 @@ namespace MaieBlazorLib
                     else
                     {
                         Debug.WriteLine("DragDrop operation failed: Items are not of the same list");
+                        Clear();
                         return false;
                     }
                 }
@@ -109,6 +111,7 @@ namespace MaieBlazorLib
             catch (Exception e)
             {
                 Debug.WriteLine($"Unhandled DragDrop operation Exception: {e.Message}");
+                Clear();
                 return false;
             }
         }
