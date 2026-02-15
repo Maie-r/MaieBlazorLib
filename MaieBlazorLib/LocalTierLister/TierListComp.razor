@@ -9,59 +9,6 @@
 <link href="css/charactercolor.css" rel="stylesheet" />
 
 <div style="overflow: hidden">
-	@if (selecitem != null)
-	{
-		<div class="maiedal">
-			<div class="d-flex col-12 ol-md-8 rounded darken-95 flex-column mx-auto my-auto shadow">
-				<div class="d-flex p-4 text-end justify-content-end">
-					<a class="clickable" @onclick="Exit">✖</a>
-				</div>
-				<img class="text-center d-flex mx-auto my-2" src="@selecitem.img" style="max-height: 400px; max-width: 400px"/>
-				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.name" placeholder="Item Name">
-				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.img" placeholder="Image Link">
-				<button class="bg-danger rounded m-2 p-1" @onclick="YouSure">Remove</button>
-			</div>
-		</div>
-		@if (yousure)
-		{
-			<div class="maiedal d-flex flex-column text-center justify-content-center">
-				<div class="p-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-10 col-md-6 border-2 shadow border-light">
-					<p> Are you sure you want to permanently remove this item? </p>
-					<div class="d-flex flex-row flex-wrap mx-auto">
-						<button class="mx-2 text-light" @onclick="YouSure">No</button>
-						<button class="mx-2 rounded p-1 bg-danger" @onclick="Delete">Yes, remove it</button>
-					</div>
-				</div>
-			</div>
-		}
-	}
-	@if (selectier != null)
-	{
-		<div class="maiedal">
-			<div class="p-0 p-md-2 d-flex col-12 col-md-8 rounded darken-95 flex-column mx-auto my-auto">
-				<div class="d-flex p-4 text-end justify-content-end">
-					<a class="clickable" @onclick="Exit">✖</a>
-				</div>
-				<div class="d-flex flex-column text-center justify-content-center mx-auto col-sm-1 py-1 py-sm-1 py-md-auto">
-					<input type="text" value="@selectier.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center flex-fill col-12 text-wrap text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), selectier.ogname)" placeholder="Tier Title" style="background-color: @selectier.color">
-				</div>
-				<MudColorPicker Label="Tier Color" @bind-Text="selectier.color" Style="@($"color: {selectier.color};")" Placeholder="Select Color" />
-				<button class="mx-2 text-danger" @onclick="YouSure">Remove</button>
-			</div>
-		</div>
-		@if (yousure)
-		{
-			<div class="maiedal d-flex flex-column text-center justify-content-center">
-				<div class="p-0 p-md-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-6">
-					<h5> Are you sure you want to permanently remove this tier? All items will be deleted with it!</h5>
-					<div class="d-flex flex-row flex-wrap mx-auto">
-						<button class="mx-2 text-light" @onclick="YouSure">No</button>
-						<button class="mx-2 text-danger" @onclick="DeleteTier">Yes, remove it and all items within</button>
-					</div>
-				</div>
-			</div>
-		}
-	}
 	<div class="col-12 d-flex darken-50 flex-column text-light m-0 m-md-2 rounded">
 		<div class="d-flex flex-wrap flex-fill flex-row rounded">
 			<input type="text" class="spinput rounded col-4 flex-fill me-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
@@ -74,6 +21,10 @@
 			</div>
 			<MudTextField @bind-Value="filter" Placeholder="Search" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="m-0 mt-2 mx-2 p-0 text-light"></MudTextField>
 			
+			@if (!showcase)
+			{
+				<h5 class="clickable flex-fill p-2 m-2 text-center rounded btn bg-highlight align-content-center" @onclick="() => Toggle(ref TierEdit)"> Edit Tiers </h5>
+            }
 		</div>
 		@foreach (var pair in selected.tiers)
 		{
@@ -111,11 +62,11 @@
 									<MudTooltip class="col-2" Color="Color.Transparent">
 										<ChildContent>
 											<TierItemComp item="@item" id="@idx" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(item == DragDropApi<TierItem>.GetOver())"
-														  OnItemSelect="Select"
-														  OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
-														  OnItemDragStop="StopDrag"
-														  OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
-														  OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
+												OnItemSelect="Select"
+												OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
+												OnItemDragStop="StopDrag"
+												OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
+												OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
 										</ChildContent>
 										<TooltipContent>
 											<div class="text-light darken-95 rounded p-3 m-0">
@@ -127,11 +78,11 @@
 								else
 								{
 									<TierItemComp @key="item" item="@item" id="@idx" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(item == DragDropApi<TierItem>.GetOver())"
-												  OnItemSelect="Select"
-												  OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
-												  OnItemDragStop="StopDrag"
-												  OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
-												  OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
+										OnItemSelect="Select"
+										OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
+										OnItemDragStop="StopDrag"
+										OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
+										OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
 								}
 							</ItemContent>
 						</Virtualize>
@@ -162,6 +113,107 @@
 			}
 		</div>
 	</div>
+
+	<!-------------  MODALS  ------------>
+	@if (selecitem != null)
+	{
+		<div class="maiedal">
+			<div class="d-flex col-12 ol-md-8 rounded darken-95 flex-column mx-auto my-auto shadow">
+				<div class="d-flex p-4 text-end justify-content-end">
+					<a class="clickable" @onclick="Exit">✖</a>
+				</div>
+				<img class="text-center d-flex mx-auto my-2" src="@selecitem.img" style="max-height: 400px; max-width: 400px" />
+				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.name" placeholder="Item Name">
+				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.img" placeholder="Image Link">
+				<button class="bg-danger rounded m-2 p-1" @onclick="YouSure">Remove</button>
+			</div>
+		</div>
+		@if (yousure)
+		{
+			<div class="maiedal d-flex flex-column text-center justify-content-center">
+				<div class="p-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-10 col-md-6 border-2 shadow border-light">
+					<p> Are you sure you want to permanently remove this item? </p>
+					<div class="d-flex flex-row flex-wrap mx-auto">
+						<button class="mx-2 text-light" @onclick="YouSure">No</button>
+						<button class="mx-2 rounded p-1 bg-danger" @onclick="Delete">Yes, remove it</button>
+					</div>
+				</div>
+			</div>
+		}
+	}
+	
+	@if (selectier != null)
+	{
+		<div class="maiedal">
+			<div class="p-0 p-md-2 d-flex col-12 col-md-8 rounded darken-95 flex-column mx-auto my-auto">
+				<div class="d-flex p-2 text-end justify-content-end">
+					<a class="clickable" @onclick="Exit">✖</a>
+				</div>
+				<div class="d-flex flex-column text-center justify-content-center mx-auto col-sm-1 py-1 py-sm-1 py-md-auto">
+					<input type="text" value="@selectier.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center flex-fill col-12 text-wrap text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), selectier.ogname)" placeholder="Tier Title" style="background-color: @selectier.color">
+				</div>
+				<MudColorPicker Label="Tier Color" @bind-Text="selectier.color" Style="@($"color: {selectier.color};")" Placeholder="Select Color" />
+				<button class="mx-2 text-danger" @onclick="YouSure">Remove</button>
+			</div>
+		</div>
+		@if (yousure)
+		{
+			<div class="maiedal d-flex flex-column text-center justify-content-center">
+				<div class="p-0 p-md-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-6">
+					<h5> Are you sure you want to permanently remove this tier? All items will be deleted with it!</h5>
+					<div class="d-flex flex-row flex-wrap mx-auto">
+						<button class="mx-2 text-light" @onclick="YouSure">No</button>
+						<button class="mx-2 text-danger" @onclick="DeleteTier">Yes, remove it and all items within</button>
+					</div>
+				</div>
+			</div>
+		}
+	}
+	
+	@if (TierEdit)
+	{
+		<div class="maiedal">
+			<div class="p-2 d-flex col-12 col-md-8 rounded darken-95 flex-column mx-auto my-auto">
+				<div class="d-flex p-2 text-end justify-content-end">
+					<a class="clickable" @onclick="Exit">✖</a>
+				</div>
+				@foreach (var pair in selected.tiers)
+				{
+					<div @key="@pair.Key" class="d-flex flex-wrap flex-md-nowrap mb-1" style="border-bottom: 2px solid; border-color: @(pair.Value.color)!important;">
+						<div class="d-flex m-1 flex-column text-center justify-content-center mx-auto col-12 col-sm-3 py-1 py-sm-1 py-md-auto">
+							<input type="text" value="@pair.Value.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center flex-fill col-12 text-wrap text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Value.ogname)" placeholder="Tier Title" style="background-color: @pair.Value.color">
+						</div>
+						<div class="col-12 col-md-9 m-1 d-flex flex-row flex-fill">
+							@if (false) // TODO: the mudcolorpicker takes a while to loadon mobile, but input color is janky as well
+							{
+								<div class="col-6 d-flex flex-fill">
+									<h5 class="mx-1">Color: </h5>
+									<input type="color" value="@pair.Value.color" />	
+								</div>
+							}
+							else
+							{
+								<MudColorPicker Label="Tier Color" @bind-Text="pair.Value.color" Style="@($"color: {pair.Value.color};")" Placeholder="Select Color" Class="col-6" />
+							}
+							<button class="mx-2 bg-danger my-2 px-1 rounded col-3 " @onclick="YouSure">Remove</button>
+						</div>
+					</div>
+				}
+			</div>
+		</div>
+		@if (yousure)
+		{
+			<div class="maiedal d-flex flex-column text-center justify-content-center">
+				<div class="p-0 p-md-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-6">
+					<h5> Are you sure you want to permanently remove this tier? All items will be deleted with it!</h5>
+					<div class="d-flex flex-row flex-wrap mx-auto">
+						<button class="mx-2 text-light" @onclick="YouSure">No</button>
+						<button class="mx-2 text-danger" @onclick="DeleteTier">Yes, remove it and all items within</button>
+					</div>
+				</div>
+			</div>
+		}
+	}
 </div>
 <div id="drag-ghost-container"></div>
 
@@ -243,6 +295,8 @@
 	string selecitemtier = "";
 
 	bool yousure;
+
+	bool TierEdit;
 
 	[Parameter]
 	public bool showcase { get; set; }
@@ -341,6 +395,7 @@
 	{
 		selecitem = null;
 		selectier = null;
+		TierEdit = false;
 		selecitemtier = "";
 		await TrySave();
 	}

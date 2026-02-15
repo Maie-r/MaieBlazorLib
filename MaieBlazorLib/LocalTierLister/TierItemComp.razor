@@ -16,7 +16,7 @@
 	}
 </a>*@
 
-@if(mobile)
+@if(mobile) @* WOKRS ON MOBILE *@
 {
 	@*@onpointerover="OverHere" @onpointerout="OuttaHere" @onpointerdown="(e) => StartDrag(e)" @onpointercancel="StopDrag" @onpointerup="StopDrag"*@
 	<a class="clickable draggable" draggable="false" 
@@ -83,6 +83,9 @@ else
 	public bool NoImage { get; set; }
 
 	[Parameter]
+	public bool NoInteraction { get; set; }
+
+	[Parameter]
 	public bool OverStyle { get; set; }
 
 	[Parameter]
@@ -146,6 +149,7 @@ else
 
 	async Task StartDrag(MouseEventArgs e) // Draggin'
 	{
+		if (NoInteraction) return;
 		//Console.Beep();
 		Logger.LogInformation($"Started drag with {item.name} from tier {item.parent.ogname}! {e.Button}");
 
@@ -192,6 +196,8 @@ else
 
 	async Task StopDrag(MouseEventArgs e)
 	{
+		if (NoInteraction) return;
+
 		Logger.LogInformation($"Stopped drag!");
 		if (mobile)
 		{
