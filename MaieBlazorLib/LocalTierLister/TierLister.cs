@@ -399,6 +399,8 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public string name { get; set; }
         public string img { get; set; }
+        public string[] tags { get; set; }
+        public string notes { get; set; }
         public Tier? parent { get; set; }
 
         public TierItem() { }
@@ -417,7 +419,7 @@ namespace MaieBlazorLib.LocalTierLister
 
         public string AsString()
         {
-            return $"TierItem {name}, img link: {img} " + (parent == null ? "No parent" : $"parent {parent!.name}");
+            return $"TierItem {name}, img link: {img}. {tags.Length} tags" + (parent == null ? "No parent" : $"parent {parent!.name}");
         }
 
         //DEPRECATED

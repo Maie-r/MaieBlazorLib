@@ -125,6 +125,8 @@
 				<img class="text-center d-flex mx-auto my-2" src="@selecitem.img" style="max-height: 400px; max-width: 400px" />
 				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.name" placeholder="Item Name">
 				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.img" placeholder="Image Link">
+				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitemtags" @bind:after="UpdateTags" placeholder="Tags (separated by comma)">
+				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-3" @bind="@selecitem.notes" placeholder="Additional Notes">
 				<button class="bg-danger rounded m-2 p-1" @onclick="YouSure">Remove</button>
 			</div>
 		</div>
@@ -293,6 +295,7 @@
 
 	TierItem? selecitem;
 	string selecitemtier = "";
+	string selecitemtags = "";
 
 	bool yousure;
 
@@ -375,6 +378,8 @@
 		if (mobile && showcase) return; // So they don't edit accidentally when scrolling
 		selecitem = i;
 		selecitemtier = key;
+		for (int j = 0; j < i.tags.Length; j++)
+			selecitemtags += i.tags[j] + (j != i.tags.Length-1 ? ", ":"");
 		selectier = null;
 	}
 
@@ -391,12 +396,23 @@
 		}
 	}
 
+	async Task UpdateTags()
+	{
+		if (selecitem == null) return;
+		string[] tags = selecitemtags.Split(',');
+		for (int i = 0; i < tags.Length; i++)
+			tags[i] = tags[i].Trim();
+		selecitem.tags = tags;		
+	}
+
 	async Task Exit()
 	{
 		selecitem = null;
 		selectier = null;
 		TierEdit = false;
 		selecitemtier = "";
+		selecitemtags = "";
+
 		await TrySave();
 	}
 

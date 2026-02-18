@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Storage;
+using MudBlazor;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -276,12 +277,17 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public string name { get; set; }
         public string img { get; set; }
+        public string[] tags { get; set; }
+        public string notes { get; set; }
 
         public static TierItemDTO ToDTO(TierItem tierItem)
         {
             TierItemDTO tiDTO = new TierItemDTO();
             tiDTO.name = tierItem.name;
             tiDTO.img = tierItem.img;
+            tiDTO.tags = tierItem.tags;
+            if (tiDTO.tags == null) tiDTO.tags = Array.Empty<string>();
+            tiDTO.notes = tierItem.notes;
             return tiDTO;
         }
 
@@ -290,6 +296,9 @@ namespace MaieBlazorLib.LocalTierLister
             TierItem ti = new TierItem();
             ti.name = tierItemDTO.name;
             ti.img = tierItemDTO.img;
+            ti.tags = tierItemDTO.tags;
+            if (ti.tags == null) ti.tags = Array.Empty<string>();
+            ti.notes = tierItemDTO.notes;
             return ti;
         }
 
