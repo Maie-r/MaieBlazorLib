@@ -343,19 +343,31 @@
 		return $"font-size: {size.ToString("F2", CultureInfo.InvariantCulture)}px";
 	}
 
-	bool InFilter(string name)
+	bool InFilter(TierItem item)
 	{
 		if (filter == "")
 		{
 			return true;
 		}
+
 		string[] filters = filter.Split("+");
 		foreach (string f in filters)
 		{
-			if (name.Contains(f, StringComparison.OrdinalIgnoreCase))
+			if (f.IndexOf("[") > -1 && f.IndexOf("]") > -1)
 			{
-				return true;
+				var tagf = f[1..^1]; //dang I've never seen this before
+				bool tagMatch = item.tags
+				.Any(t => t.Contains(tagf, StringComparison.OrdinalIgnoreCase));
+				if (tagMatch) return tagMatch;
 			}
+			else
+			{
+				if (item.name.Contains(f, StringComparison.OrdinalIgnoreCase))
+				{
+					return true;
+				}
+			}
+
 		}
 		return false;
 	}
@@ -364,7 +376,7 @@
 	{
 		if (string.IsNullOrEmpty(filter)) return tier.items;
 		// return a materialized list -- Virtualize performs better with IList-ish sources.
-		return tier.items.Where(x => InFilter(x.name)).ToList();
+		return tier.items.Where(x => InFilter(x)).ToList();
 	}
 
 	void Select(TierItem l)
@@ -696,7 +708,7 @@
 				DragDropApi<TierItem>.OverHere(selected.tiers[overtier].items, idx);
 		}
 
-		
+
 	}
 
 	void OverTier(string tier)
