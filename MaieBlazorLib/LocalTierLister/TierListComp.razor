@@ -197,6 +197,10 @@
 							{
 								<MudColorPicker Label="Tier Color" @bind-Text="pair.Value.color" Style="@($"color: {pair.Value.color};")" Placeholder="Select Color" Class="col-6" />
 							}
+							<div class="d-flex flex-column">
+								<button class="p-1 rounded mx-1 bg-secondary" @onclick="() => RearengeTier(pair.Key, -1)"><MudIcon Icon="@Icons.Material.Filled.KeyboardArrowUp" Title="MoveUp" /></button>
+								<button class="p-1 rounded mx-1 bg-secondary" @onclick="() => RearengeTier(pair.Key, 1)"><MudIcon Icon="@Icons.Material.Filled.KeyboardArrowDown" Title="MoveDown" /></button>
+							</div>
 							<button class="mx-2 bg-danger my-2 px-1 rounded col-3 " @onclick="YouSure">Remove</button>
 						</div>
 					</div>
@@ -485,6 +489,19 @@
 		string h = await JSRuntime.InvokeAsync<string>("getPlainText", temptiername);
 		Logger.LogInformation(h);
 	}
+
+	void RearengeTier(string key, int direction)
+	{
+		if (direction == 0) return;
+		List<KeyValuePair<string, Tier>> rearenger = selected.tiers.ToList();
+		int index = rearenger.FindIndex((e) => e.Key == key);
+		int newindex = index + direction;
+		if (newindex < 0 || newindex >= rearenger.Count) return;
+		var temp = rearenger[index];
+		rearenger.RemoveAt(index);
+        rearenger.Insert(newindex, temp);
+        selected.tiers = rearenger.ToDictionary();
+    }
 
 	async Task TrySave()
 	{
