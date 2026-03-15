@@ -26,13 +26,13 @@
 	   @onpointerup="StopDrag"
 	   @onpointercancel="StopDrag"
 	   style="touch-action: none!important;">
-		@if (item.img == "" || NoImage || imageFailed)
+		@if (String.IsNullOrEmpty(ImageUsed) || NoImage || imageFailed)
 		{
 			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") unselectable rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
 		}
 		else
 		{
-			<img src="@item.img" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" loading="lazy" @onerror="ImageFail"/>
+			<img src="@ImageUsed" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" loading="lazy" @onerror="ImageFail"/>
 		}
 	</a>
 }
@@ -40,20 +40,25 @@ else
 {
 	@* WORKS ON DESKTOP *@
 	<a class="clickable draggable" draggable="true" @ondragover="OverHere" @ondragleave="OuttaHere" @onmousedown="(e) => StartDrag(e)" @ondragend="StopDrag">
-		@if (item.img == "" || NoImage || imageFailed)
+		@if (String.IsNullOrEmpty(ImageUsed) || NoImage || imageFailed)
 		{
 			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
 		}
 		else
 		{
-			<img src="@item.img" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" loading="lazy" @onerror="ImageFail" />
+			<img src="@ImageUsed" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" loading="lazy" @onerror="ImageFail" />
 		}
 	</a>
 }
 
-<script src="imageHandler.js"></script>
+@*<script src="imageHandler.js"></script>*@
 <script>
+		window.createBlobUrl = (byteArray, mimeType) => {
+		const blob = new Blob([new Uint8Array(byteArray)], { type: mimeType });
+		return URL.createObjectURL(blob);
+	};
 
+	window.revokeBlobUrl = (url) => URL.revokeObjectURL(url);
 </script>
 <style>
 	.OverItem{
@@ -106,9 +111,13 @@ else
 	int dragthreshold = 500; // ms
 	ElementReference elementRef;
 
+	string ImageUsed; // to differ local img and web image
+
 	bool imageFailed = false;
 
 	bool mobile = false;
+
+	string? _blobUrl;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -116,8 +125,31 @@ else
 		//Logger.LogInformation(id.ToString());
 		/*if (mobile)
 		Logger.LogInformation("U R ON MOBILE!! PHONE USERR!!!! SCREENTOUCHER!!!");
-		else
+				else
 			Logger.LogInformation("U R ON DESKTOP!! MOUSE USERRR!!! SCREENCURSOR!!!");//*/
+
+		//Image Priority: Web > Local > Text
+		// for debugging purposes though, prioritizing local
+		if (item.imgBytes != null){
+			ImageUsed = await LoadB64Image(item.imgBytes, "image/jpeg");
+			Logger.LogInformation("LocalImage");
+		}
+		else
+			ImageUsed = item.img;
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+			item.ComponentInstance = this;
+	}
+
+	async Task<string> LoadB64Image(byte[] imageBytes, string mimeType)
+	{
+		if (_blobUrl != null)
+			await JSRuntime.InvokeVoidAsync("revokeBlobUrl", _blobUrl); // cleanup old one
+
+		return await JSRuntime.InvokeAsync<string>("createBlobUrl", imageBytes, mimeType);
 	}
 
 	void ImageFail()
@@ -226,8 +258,17 @@ else
 		await OnItemOut.InvokeAsync();
 	}
 
+	public async Task ForceRefresh() 
+	{
+		Logger.LogInformation("Ahoy refresh");
+		await InvokeAsync(StateHasChanged);
+	}
+
 	public void Dispose()
 	{
-		
+		if (_blobUrl != null)
+			JSRuntime.InvokeVoidAsync("revokeBlobUrl", _blobUrl);
+
+		item.ComponentInstance = null;
 	}
 }

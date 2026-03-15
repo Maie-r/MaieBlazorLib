@@ -231,12 +231,12 @@ namespace MaieBlazorLib.LocalTierLister
             {
                 Debug.WriteLine("No Tierlists to save.");
                 var emptysave = new TierListSaveData(new List<TierList>());
-                emptysave.Save(filePath);
+                await emptysave.SaveAsync(filePath);
                 return;
             }
             //var json = JsonSerializer.Serialize(championship, options);
             var saveData = new TierListSaveData(this.TierLists);
-            saveData.Save(filePath);
+            saveData.SaveAsync(filePath);
         }
 
         static JsonSerializerOptions options = new()
@@ -399,9 +399,14 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public string name { get; set; }
         public string img { get; set; }
+        public string imgLocal { get; set; } //local address
+        public byte[] imgBytes { get; set; }     
+        public string imgMime { get; set; }
         public string[] tags { get; set; }
         public string notes { get; set; }
         public Tier? parent { get; set; }
+        public TierItemComp? ComponentInstance { get; set; }
+        public int Renderversion { get; set; } = 1;
 
         public TierItem() { }
 

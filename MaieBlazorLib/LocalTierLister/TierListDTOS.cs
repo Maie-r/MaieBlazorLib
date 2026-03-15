@@ -52,6 +52,29 @@ namespace MaieBlazorLib.LocalTierLister
             }
         }
 
+        public static async Task SaveAsync(TierListSaveData saveData, string filename)
+        {
+            string folder = GetFolder();
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+            string path = Path.Combine(folder, filename + ".json");
+            await using var stream = File.Create(path);
+            await JsonSerializer.SerializeAsync(stream, saveData, options);
+        }
+
+        public async Task SaveAsync(string filename)
+        {
+            try
+            {
+                await SaveAsync(this, filename);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving TierListSaveData to file: {ex.Message}");
+                throw;
+            }
+        }
+
         /// <summary>
         /// Load from a local file with filename
         /// </summary>
@@ -277,6 +300,9 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public string name { get; set; }
         public string img { get; set; }
+        public string imgLocal { get; set; }
+        public byte[] imgBytes { get; set; }
+        public string imgMime { get; set; }
         public string[] tags { get; set; }
         public string notes { get; set; }
 
@@ -285,6 +311,9 @@ namespace MaieBlazorLib.LocalTierLister
             TierItemDTO tiDTO = new TierItemDTO();
             tiDTO.name = tierItem.name;
             tiDTO.img = tierItem.img;
+            tiDTO.imgLocal = tierItem.imgLocal;
+            tiDTO.imgBytes = tierItem.imgBytes;
+            tiDTO.imgMime = tierItem.imgMime;
             tiDTO.tags = tierItem.tags;
             if (tiDTO.tags == null) tiDTO.tags = Array.Empty<string>();
             tiDTO.notes = tierItem.notes;
@@ -296,6 +325,9 @@ namespace MaieBlazorLib.LocalTierLister
             TierItem ti = new TierItem();
             ti.name = tierItemDTO.name;
             ti.img = tierItemDTO.img;
+            ti.imgLocal = tierItemDTO.imgLocal;
+            ti.imgBytes = tierItemDTO.imgBytes;
+            ti.imgMime = tierItemDTO.imgMime;
             ti.tags = tierItemDTO.tags;
             if (ti.tags == null) ti.tags = Array.Empty<string>();
             ti.notes = tierItemDTO.notes;

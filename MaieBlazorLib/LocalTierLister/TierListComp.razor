@@ -2,6 +2,8 @@
 @using System.Globalization
 @using System.Collections
 @using Microsoft.Extensions.Logging
+@using Microsoft.Maui.Media
+@using Microsoft.Maui.Storage
 @using MudBlazor
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 @inject ILogger<TierListComp> Logger
@@ -77,7 +79,7 @@
 								}
 								else
 								{
-									<TierItemComp @key="item" item="@item" id="@idx" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(item == DragDropApi<TierItem>.GetOver())"
+									<TierItemComp @key="@($"{item.GetHashCode()} + {item.Renderversion}")" item="@item" id="@idx" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(item == DragDropApi<TierItem>.GetOver())"
 										OnItemSelect="Select"
 										OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
 										OnItemDragStop="StopDrag"
@@ -122,11 +124,18 @@
 				<div class="d-flex p-4 text-end justify-content-end">
 					<a class="clickable" @onclick="Exit">✖</a>
 				</div>
-				<img class="text-center d-flex mx-auto my-2" src="@selecitem.img" style="max-height: 400px; max-width: 400px" />
+				<img class="text-center d-flex mx-auto my-2" src="@selecImage" style="max-height: 400px; max-width: 400px" />
 				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.name" placeholder="Item Name">
-				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.img" placeholder="Image Link">
-				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitemtags" @bind:after="UpdateTags" placeholder="Tags (separated by comma)">
-				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-3" @bind="@selecitem.notes" placeholder="Additional Notes">
+				<div class="d-flex flex-nowrap col-12 p-2">
+					<input type="text" class="spinput rounded flex-fill text-light p-2 col-10" @bind="@selecitem.img" @bind:after="@(async () => selecImage = await GetSelectImage())" placeholder="Image Link"> 
+					@if (mobile)
+					{
+						<button class="btn bg-highlight mx-1 col-2" @onclick="() => PickLocalImage(false)"><MudIcon Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Default" Title="PickLocal" /></button>
+						<button class="btn bg-highlight col-2" @onclick="() => PickLocalImage(true)"><MudIcon Icon="@Icons.Material.Filled.CameraAlt" Color="Color.Default" Title="PickLocalCamera" /></button>
+					}
+				</div>
+				<input type="text" class="spinput rounded flex-fill text-light mx-2 my-1 p-2" @bind="@selecitemtags" @bind:after="UpdateTags" placeholder="Tags (separated by comma)">
+				<input type="text" class="spinput rounded flex-fill text-light mx-2 my-1 p-3" @bind="@selecitem.notes" placeholder="Additional Notes">
 				<button class="bg-danger rounded m-2 p-1" @onclick="YouSure">Remove</button>
 			</div>
 		</div>
@@ -223,7 +232,7 @@
 </div>
 <div id="drag-ghost-container"></div>
 
-<script src="imageHandler.js"></script>
+@*<script src="imageHandler.js"></script>*@
 <script>
 	window.getTierItemIdAtPoint = (x, y) => {
 		const el = document.elementFromPoint(x, y);
@@ -275,6 +284,13 @@
 			}
 		}
 	};
+
+	window.createBlobUrl = (byteArray, mimeType) => {
+	const blob = new Blob([new Uint8Array(byteArray)], { type: mimeType });
+	return URL.createObjectURL(blob);
+	};
+
+	window.revokeBlobUrl = (url) => URL.revokeObjectURL(url);
 </script>
 
 
@@ -295,11 +311,21 @@
 	[Parameter]
 	public EventCallback<string> OnError { get; set; }
 
+	[Parameter]
+	public EventCallback<string> OnLoadingStart { get; set; } // string is loading message
+
+	[Parameter]
+	public EventCallback<string> OnLoaded { get; set; } // string is optional loading complete message
+
+	Dictionary<string, Virtualize<TierItem>> _virtualizeRefs = new();
+
 	Tier? selectier;
 
 	TierItem? selecitem;
 	string selecitemtier = "";
 	string selecitemtags = "";
+	string selecImage = "";
+	string? _selectbloburl;
 
 	bool yousure;
 
@@ -312,19 +338,30 @@
 	[Parameter]
 	public bool NoImg { get; set; }
 
-	bool mobile;
-
-	protected override async Task OnInitializedAsync()
-	{
-		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
-	}
-
 	string filter = "";
 	string temptiername = "";
 	//ElementReference temptier;
 
 	string overtier = ""; // which tier mouse is over
 	//string draggedtier = ""; // which tier dragged item was from
+
+	bool mobile;
+
+	CancellationTokenSource? _saveCts;
+
+	protected override async Task OnInitializedAsync()
+	{
+		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
+		await OnLoaded.InvokeAsync();
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender) 
+		{
+			await OnLoaded.InvokeAsync();
+		}
+	}
 
 	void Toggle(ref bool thing)
 	{
@@ -383,20 +420,25 @@
 		return tier.items.Where(x => InFilter(x)).ToList();
 	}
 
-	void Select(TierItem l)
+	async Task Select(TierItem l)
 	{
-		Select(l, l.parent.ogname);
+		await Select(l, l.parent.ogname);
 	}
 
-	void Select(TierItem i, string key)
+	async Task Select(TierItem i, string key)
 	{
 		//Logger.LogInformation($"Youre showcase is: Damn {showcase}");
 		if (mobile && showcase) return; // So they don't edit accidentally when scrolling
+		if (i == null || i == selecitem) return;
+		await OnLoadingStart.InvokeAsync("Loading Item...");
 		selecitem = i;
 		selecitemtier = key;
 		for (int j = 0; j < i.tags.Length; j++)
 			selecitemtags += i.tags[j] + (j != i.tags.Length-1 ? ", ":"");
 		selectier = null;
+		selecImage = await GetSelectImage();
+		await OnLoaded.InvokeAsync("Item Loaded!");
+
 	}
 
 	void SelectTier(MouseEventArgs e, string tier)
@@ -415,21 +457,74 @@
 	async Task UpdateTags()
 	{
 		if (selecitem == null) return;
+		await OnLoadingStart.InvokeAsync("Updating Tags...");
 		string[] tags = selecitemtags.Split(',');
 		for (int i = 0; i < tags.Length; i++)
 			tags[i] = tags[i].Trim();
-		selecitem.tags = tags;		
+		selecitem.tags = tags;
+		await OnLoaded.InvokeAsync("Tags Updated!");
+	}
+
+	async Task PickLocalImage(bool Camera)
+	{
+		if (mobile)
+		{
+			FileResult? photo;
+			if (Camera)
+				photo = await MediaPicker.Default.CapturePhotoAsync();
+			else
+			{
+				var ptos = await MediaPicker.Default.PickPhotosAsync(new MediaPickerOptions() { SelectionLimit = 1});
+				photo = ptos[0];
+			}
+			if (photo is null) return;
+
+			await using Stream stream = await photo.OpenReadAsync();
+			using MemoryStream ms = new();
+			await stream.CopyToAsync(ms);
+
+			byte[] imageBytes = ms.ToArray();
+			/*string? b64 = Convert.ToBase64String(ms.ToArray());
+			if (b64 == null)
+			{
+				await OnError.InvokeAsync("Failed to convert image to base64 string");
+				return;
+				}
+			Logger.LogInformation("Base4 string: " + b64);
+			selecitem.imgLocal = b64;*/
+						selecitem.imgBytes = imageBytes;
+
+			await TrySave();
+
+			selecImage = await GetSelectImage();
+			StateHasChanged();
+		}
+		else
+		{
+			await OnError.InvokeAsync("Local image picking is only implemented for mobile currently");
+		}
 	}
 
 	async Task Exit()
 	{
+		await OnLoadingStart.InvokeAsync("Saving Item...");
+		//var tempcomponentref = selecitem.ComponentInstance;
+		if (selecitem != null)
+			selecitem.Renderversion++; // force image refresh
 		selecitem = null;
 		selectier = null;
 		TierEdit = false;
 		selecitemtier = "";
 		selecitemtags = "";
+		if (_selectbloburl != null)
+			await JSRuntime.InvokeVoidAsync("revokeBlobUrl", _selectbloburl);
 
 		await TrySave();
+
+		StateHasChanged();
+		//await tempcomponentref?.ForceRefresh();
+
+		await OnLoaded.InvokeAsync("Item Saved!");
 	}
 
 	async Task Add(string key)
@@ -437,13 +532,15 @@
 		TierItem temp = new TierItem("NEW ITEM,", selected.tiers[key]);
 		selected.tiers[key].Add(temp);
 		selecitem = temp;
-		await TrySave();
+		//await TrySave();
 	}
 
 	async Task NewTier()
 	{
+		await OnLoadingStart.InvokeAsync("Creating Tier...");
 		selected.tiers.Add("New Tier", new Tier("New Tier", "#EAD21F"));
 		await TrySave();
+		await OnLoaded.InvokeAsync("Tier Created!");
 	}
 
 	async Task ChangeTierName(Tier tier)
@@ -490,25 +587,39 @@
 		Logger.LogInformation(h);
 	}
 
-	void RearengeTier(string key, int direction)
+	async Task RearengeTier(string key, int direction)
 	{
 		if (direction == 0) return;
+		await OnLoadingStart.InvokeAsync("Rearenging Tier...");
 		List<KeyValuePair<string, Tier>> rearenger = selected.tiers.ToList();
 		int index = rearenger.FindIndex((e) => e.Key == key);
 		int newindex = index + direction;
 		if (newindex < 0 || newindex >= rearenger.Count) return;
 		var temp = rearenger[index];
 		rearenger.RemoveAt(index);
-        rearenger.Insert(newindex, temp);
-        selected.tiers = rearenger.ToDictionary();
-    }
+		rearenger.Insert(newindex, temp);
+		selected.tiers = rearenger.ToDictionary();
+		await OnLoaded.InvokeAsync("Tier Rearenged!");
+	}
 
 	async Task TrySave()
 	{
-		Logger.LogInformation("Saving!");
-		if (tl != null)
-			await tl.SaveAll();
-		await OnSave.InvokeAsync();
+		_saveCts?.Cancel();
+		_saveCts = new CancellationTokenSource();
+		var token = _saveCts.Token;
+
+		try
+		{
+			await Task.Delay(500, token);
+			if (tl != null)
+			{
+				await Task.Run(() => tl.SaveAll(), token);
+				Logger.LogInformation("Saving!");
+			}
+			await OnSave.InvokeAsync();
+		}
+		catch (OperationCanceledException) { /* debounced away, that's fine */ }
+
 	}
 
 	void YouSure()
@@ -518,10 +629,12 @@
 
 	async Task Export()
 	{
+		await OnLoadingStart.InvokeAsync("Exporting Data to Clipboard...");
 		var json = TierLister.ExportJson(selected);
 		if (string.IsNullOrEmpty(json))
 		{
 			await OnError.InvokeAsync("Couldn't export tierlist: no JSON produced from TierService.tl.ExportJson()");
+			await OnLoaded.InvokeAsync();
 			return;
 		}
 
@@ -552,6 +665,10 @@
 				Logger.LogError(jsEx, "Fallback copy to clipboard via JS also failed.");
 				await OnError.InvokeAsync("Failed to export Tierlist into the clipboard");
 			}
+		}
+		finally
+		{
+			await OnLoaded.InvokeAsync();
 		}
 	}
 
@@ -713,6 +830,7 @@
 				return;
 
 			Logger.LogInformation($"Pointer is over TierItem id: {overId} (which is in Tier {overTierId} )");
+			OverTier(overTierId);
 
 			//currentOverIndex = idx;
 
@@ -750,9 +868,32 @@
 		StateHasChanged();
 	}
 
+	async Task<string> GetSelectImage()
+	{
+		if (selecitem == null) return "";
+
+		var res = "";
+
+		if (selecitem.imgBytes != null)
+			return await LoadB64Image(selecitem.imgBytes, "image/jpeg");
+		else
+			return selecitem.img;
+	}
+
+	async Task<string> LoadB64Image(byte[] imageBytes, string mimeType)
+	{
+		if (_selectbloburl != null)
+			await JSRuntime.InvokeVoidAsync("revokeBlobUrl", _selectbloburl); // cleanup old one
+
+		return await JSRuntime.InvokeAsync<string>("createBlobUrl", imageBytes, mimeType);
+	}
+
+
 	public void Dispose()
 	{
 		selectier = null;
 		selecitem = null;
+		if (_selectbloburl != null)
+			JSRuntime.InvokeVoidAsync("revokeBlobUrl", _selectbloburl);
 	}
 }
