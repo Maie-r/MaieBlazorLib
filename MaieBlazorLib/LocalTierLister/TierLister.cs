@@ -381,6 +381,10 @@ namespace MaieBlazorLib.LocalTierLister
         public void Add(TierItem item)
         {
             items.Add(item);
+            if (item.parent != this)
+            {
+                item.parent = this;
+            }
         }
 
         public string AsString()

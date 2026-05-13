@@ -53,6 +53,8 @@ namespace MaieBlazorLib
         {
             try
             {
+                var Over = DragDropApi<T>.Over;
+                var Dragged = DragDropApi<T>.Dragged;
                 if (Over != null && Dragged != null)
                 {
                     if (Dragged.Value.Index >= 0 && Over.Value.Index >= 0)
@@ -287,7 +289,7 @@ namespace MaieBlazorLib
 
     internal class DragDropBehaviourCancel : IDragDropBehaviour
     {
-        public static readonly DragDropBehaviourCopy Instance = new();
+        public static readonly DragDropBehaviourCancel Instance = new();
         public void Behave<T>((IList<T> List, int Index)? Dragged, (IList<T> List, int Index)? Over)
         {
             Debug.WriteLine($"Cancelled DragDrop operation");

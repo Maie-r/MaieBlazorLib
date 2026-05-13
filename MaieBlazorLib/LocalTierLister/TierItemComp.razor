@@ -19,13 +19,13 @@
 @if(mobile) @* WOKRS ON MOBILE *@
 {
 	@*@onpointerover="OverHere" @onpointerout="OuttaHere" @onpointerdown="(e) => StartDrag(e)" @onpointercancel="StopDrag" @onpointerup="StopDrag"*@
-	<a class="clickable draggable" draggable="false" 
+	<div class="clickable draggable" draggable="false" 
 	   @ref="elementRef"
 	   data-tieritem-id="@id"
 	   @onpointerdown="StartDrag"
 	   @onpointerup="StopDrag"
 	   @onpointercancel="StopDrag"
-	   style="touch-action: none!important;">
+		   style="touch-action: none!important; @(DragDropApi<TierItem>.GetOver() == item ? "pointer-events: none" : "");">
 		@if (String.IsNullOrEmpty(ImageUsed) || NoImage || imageFailed)
 		{
 			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") unselectable rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
@@ -34,7 +34,7 @@
 		{
 			<img src="@ImageUsed" draggable="false" alt="@item.name" class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded flex-fill m-1" loading="lazy" @onerror="ImageFail"/>
 		}
-	</a>
+	</div>
 }
 else
 {
@@ -206,6 +206,9 @@ else
 				dragStarted = true;
 
 				Logger.LogInformation("DRAGDELAY: Pointer passed threshold, Dragging!");
+
+				// comment to disable drag ghost
+				
 				await JSRuntime.InvokeVoidAsync(
 					"dragGhost.create",
 					elementRef,
