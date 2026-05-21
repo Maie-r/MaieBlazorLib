@@ -11,24 +11,32 @@
 <link href="css/charactercolor.css" rel="stylesheet" />
 
 <div style="overflow: hidden">
-	<div class="col-12 d-flex darken-50 flex-column text-light m-0 m-md-2 rounded">
-		<div class="d-flex flex-wrap flex-fill flex-row rounded">
-			<input type="text" class="spinput rounded col-4 flex-fill me-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
-			<div class="row col-sm-4 col-md-3 col-lg-2 mx-2 my-1 d-flex flex-fill flex-wrap">
-				<div class="row p-0 col-12 d-flex">
-					<div class="d-flex col-12 p-0 flex-nowrap flex-fill flex-row">
-						<h5 class="clickable flex-fill p-2 m-0 text-center rounded btn bg-primary align-content-center" @onclick="Export"> Export Tierlist </h5>
+	@if (Loading)
+	{
+		<div>
+			<h2>Loading...</h2>
+		</div>
+	}
+	else
+	{
+		<div class="col-12 d-flex darken-50 flex-column text-light m-0 m-md-2 rounded">
+			<div class="d-flex flex-wrap flex-fill flex-row rounded">
+				<input type="text" class="spinput rounded col-4 flex-fill me-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
+				<div class="row col-sm-4 col-md-3 col-lg-2 mx-2 my-1 d-flex flex-fill flex-wrap">
+					<div class="row p-0 col-12 d-flex">
+						<div class="d-flex col-12 p-0 flex-nowrap flex-fill flex-row">
+							<h5 class="clickable flex-fill p-2 m-0 text-center rounded btn bg-primary align-content-center" @onclick="Export"> Export Tierlist </h5>
+						</div>
 					</div>
 				</div>
+				<MudTextField @bind-Value="filter" Placeholder="Search" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="m-0 mt-2 mx-2 p-0 text-light"></MudTextField>
+
+				@if (!showcase)
+				{
+					<h5 class="clickable flex-fill p-2 m-2 text-center rounded btn bg-highlight align-content-center" @onclick="() => Toggle(ref TierEdit)"> Edit Tiers </h5>
+				}
 			</div>
-			<MudTextField @bind-Value="filter" Placeholder="Search" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="m-0 mt-2 mx-2 p-0 text-light"></MudTextField>
-			
-			@if (!showcase)
-			{
-				<h5 class="clickable flex-fill p-2 m-2 text-center rounded btn bg-highlight align-content-center" @onclick="() => Toggle(ref TierEdit)"> Edit Tiers </h5>
-            }
-		</div>
-		@*TierItemComp item="dummyitem" id="0" isminimal="false" NoImage="true" OverStyle="@(dummyitem == DragDropApi<TierItem>.GetOver())"
+			@*TierItemComp item="dummyitem" id="0" isminimal="false" NoImage="true" OverStyle="@(dummyitem == DragDropApi<TierItem>.GetOver())"
 					  OnItemSelect="Select"
 					  OnItemDrag="() => DragDropApi<TierItem>.StartDrag(dummyTier.items, 0)"
 					  OnItemDragStop="StopDrag"
@@ -44,40 +52,40 @@
 					<p class="tieritem unselectable rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="font-size: 20px">GOD</p>
 			</a>
 		</div>*@
-		@foreach (var pair in selected.tiers)
-		{
-			<div class="p-0 m-0 d-flex darken-25 flex-md-row @(minimal ? "flex-sm-row" : "flex-column") col-12"
+			@foreach (var pair in selected.tiers)
+			{
+				<div class="p-0 m-0 d-flex darken-25 flex-md-row @(minimal ? "flex-sm-row" : "flex-column") col-12"
 				>
-				<a class="text-box-container d-flex clickable text-center justify-content-center @(minimal ? "col-1 flex-row" : "flex-row") align-items-center py-1 py-sm-1 py-md-auto me-1"
+					<a class="text-box-container d-flex clickable text-center justify-content-center @(minimal ? "col-1 flex-row" : "flex-row") align-items-center py-1 py-sm-1 py-md-auto me-1"
 					@onmousedown="(e) => SelectTier(e, pair.Key)" style="background-color: @pair.Value.color"
 					data-tier-id="@pair.Key">
-					<input type="text" value="@pair.Value.name" class="tierput rounded d-flex py-md-auto p-1 m-0 flex-fill text-wrap overflow-visible text-break text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Key)" placeholder="Tier Title" style="@GetFontSize(pair.Value.name); white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
-					@*<MudTextField @bind-Value="pair.Value.name" T="string" Text="@pair.Value.name" Variant="Variant.Outlined" @onblur="() => ChangeTierName(pair.Value)" AutoGrow Lines="4" Class="d-flex flex-column text-center justify-content-center text-light border-0" Style="@GetFontSize(pair.Value.name)"></MudTextField>*@
-				</a>
-				@*<a id="pair.Value.name" class="text-box-container d-flex clickable flex-column text-center justify-content-center col-sm-1 py-1 py-sm-1 py-md-auto me-1" @onmousedown="(e) => SelectTier(e, pair.Key)" style="background-color: @pair.Value.color">
+						<input type="text" value="@pair.Value.name" class="tierput rounded d-flex py-md-auto p-1 m-0 flex-fill text-wrap overflow-visible text-break text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Key)" placeholder="Tier Title" style="@GetFontSize(pair.Value.name); white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
+						@*<MudTextField @bind-Value="pair.Value.name" T="string" Text="@pair.Value.name" Variant="Variant.Outlined" @onblur="() => ChangeTierName(pair.Value)" AutoGrow Lines="4" Class="d-flex flex-column text-center justify-content-center text-light border-0" Style="@GetFontSize(pair.Value.name)"></MudTextField>*@
+					</a>
+					@*<a id="pair.Value.name" class="text-box-container d-flex clickable flex-column text-center justify-content-center col-sm-1 py-1 py-sm-1 py-md-auto me-1" @onmousedown="(e) => SelectTier(e, pair.Key)" style="background-color: @pair.Value.color">
 					<p contenteditable="plaintext-only" class="tierput rounded d-flex flex-column py-md-auto justify-content-center p-1 m-0 flex-fill text-center text-wrap overflow-hidden text-break text-light" @oninput="(e) => StoreTierName(e)" @onblur="(e) => ChangeTierName(e, pair.Key)" placeholder="Tier Title" style="@GetFontSize(pair.Value.name);">@pair.Value.name</p>
 				</a>*@
-				@*<textarea class="tierput col-sm-1 clickable rounded d-flex py-md-auto py-1 m-0 flex-column overflow-hidden px-auto justify-content-center flex-fill text-center text-light" 
+					@*<textarea class="tierput col-sm-1 clickable rounded d-flex py-md-auto py-1 m-0 flex-column overflow-hidden px-auto justify-content-center flex-fill text-center text-light" 
 					@onmousedown="(e) => SelectTier(e, pair.Key)" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Key)" 
 					style="background-color: @pair.Value.color; @GetFontSize(pair.Value.name); resize: none; text-align-last: center">
 					@pair.Value.name
 				</textarea>*@
-				 
 
-				<div class="d-flex flex-fill col-12"
-					 @ondrop="(e) => DropIntoTier(pair.Key)"
-					 @ondragover="(DragEventArgs e) => OverTier(pair.Key)"
-					 @ondragover:preventDefault="true"
-					 @onpointermove="(e) => OnPointerMove(e, pair)"
-					 @ondragleave="OuttaTier"
-					 data-tier-id="@pair.Key">
-				
-					<div class="d-flex text-start flex-wrap col-12" style="border-top: solid; border-bottom: solid; border-color: @pair.Value.color">
-						@*<Virtualize Items="GetFilteredItems(pair.Value)" ItemSize="100" TItem="TierItem">*@
-						@foreach (var item in GetFilteredItems(pair.Value))
-						{
-							var idx = pair.Value.items.IndexOf(item);
-							@*<ItemContent Context="item">
+
+					<div class="d-flex flex-fill col-12"
+					@ondrop="(e) => DropIntoTier(pair.Key)"
+					@ondragover="(DragEventArgs e) => OverTier(pair.Key)"
+					@ondragover:preventDefault="true"
+					@onpointermove="(e) => OnPointerMove(e, pair)"
+					@ondragleave="OuttaTier"
+					data-tier-id="@pair.Key">
+
+						<div class="d-flex text-start flex-wrap col-12" style="border-top: solid; border-bottom: solid; border-color: @pair.Value.color">
+							@*<Virtualize Items="GetFilteredItems(pair.Value)" ItemSize="100" TItem="TierItem">*@
+							@foreach (var item in GetFilteredItems(pair.Value))
+							{
+								var idx = pair.Value.items.IndexOf(item);
+								@*<ItemContent Context="item">
 								@{
 									// compute index only when needed (IndexOf is O(n) but Virtualize limits rendered items)
 									var idx = pair.Value.items.IndexOf(item);
@@ -108,48 +116,50 @@
 									OnItemDragStop="StopDrag"
 									OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
 									OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
-									
+
 								}
-							@*</ItemContent>*@
-						}
-						@*@</Virtualize>*@
-						@if (!showcase)
-						{
-							if (minimal)
-							{
-								<h5 class="clickable p-0 m-1 justify-content-center rounded px-auto text-center d-flex flex-column template tieritemsmall" @onclick="() => Add(pair.Key)"> New Item </h5>
+								@*</ItemContent>*@
 							}
-							else
+							@*@</Virtualize>*@
+							@if (!showcase)
 							{
-								<h5 class="clickable p-0 m-0 justify-content-center py-auto rounded text-center my-auto d-flex flex-column template tieritem" @onclick="() => Add(pair.Key)"> New Item </h5>
+								if (minimal)
+								{
+									<h5 class="clickable p-0 m-1 justify-content-center rounded px-auto text-center d-flex flex-column template tieritemsmall" @onclick="() => Add(pair.Key)"> New Item </h5>
+								}
+								else
+								{
+									<h5 class="clickable p-0 m-0 justify-content-center py-auto rounded text-center my-auto d-flex flex-column template tieritem" @onclick="() => Add(pair.Key)"> New Item </h5>
+								}
 							}
-						}
+						</div>
 					</div>
 				</div>
-			</div>
-		}
-		<div class="d-flex darken-25 col-12 flex-row m-0 p-0">
-			@if (!showcase)
-			{
-				<a class="clickable col-12 p-0 m-0" @onclick="NewTier">
-					<div class="d-block tieritem py-auto p-0 m-0 text-center template col-1 me-1 py-auto bg-darken-25">
-						<h2>New Tier</h2>
-					</div>
-				</a>
-				<div class="d-flex col-11"></div>
 			}
+			<div class="d-flex darken-25 col-12 flex-row m-0 p-0">
+				@if (!showcase)
+				{
+					<a class="clickable col-12 p-0 m-0" @onclick="NewTier">
+						<div class="d-block tieritem py-auto p-0 m-0 text-center template col-1 me-1 py-auto bg-darken-25">
+							<h2>New Tier</h2>
+						</div>
+					</a>
+					<div class="d-flex col-11"></div>
+				}
+			</div>
 		</div>
-	</div>
+	}
 
 	<!-------------  MODALS  ------------>
 	@if (selecitem != null)
 	{
-		<div class="maiedal">
-			<div class="d-flex col-12 ol-md-8 rounded darken-95 flex-column mx-auto my-auto shadow">
+		<div class="maiedal align-content-center">
+			<div class="d-flex col-12 col-md-6 darken-85 flex-column mx-auto my-auto shadow align-content-center" style="border-radius: 2vw">
 				<div class="d-flex p-4 text-end justify-content-end">
-					<a class="clickable" @onclick="Exit">✖</a>
+					<a class="clickable fs-5" @onclick="Exit">✖</a>
 				</div>
-				<img class="text-center d-flex mx-auto my-2" src="@selecImage" style="max-height: 400px; max-width: 400px" />
+				<div class="d-flex flex-column flex-wrap p-md-4 p-1 pt-0">
+				<img class="text-center d-flex mx-auto my-2" src="@selecImage" style="max-height: 50vh; max-width: 50vw; border: 1px solid; border: grey; border-radius: 2vw" />
 				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.name" placeholder="Item Name">
 				<div class="d-flex flex-nowrap col-12 p-2">
 					<input type="text" class="spinput rounded flex-fill text-light p-2 col-10" @bind="@selecitem.img" @bind:after="@(async () => selecImage = await GetSelectImage())" placeholder="Image Link"> 
@@ -162,16 +172,17 @@
 				<input type="text" class="spinput rounded flex-fill text-light mx-2 my-1 p-2" @bind="@selecitemtags" @bind:after="UpdateTags" placeholder="Tags (separated by comma)">
 				<input type="text" class="spinput rounded flex-fill text-light mx-2 my-1 p-3" @bind="@selecitem.notes" placeholder="Additional Notes">
 				<button class="bg-danger rounded m-2 p-1" @onclick="YouSure">Remove</button>
+				</div>
 			</div>
 		</div>
 		@if (yousure)
 		{
 			<div class="maiedal d-flex flex-column text-center justify-content-center">
-				<div class="p-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-10 col-md-6 border-2 shadow border-light">
+				<div class="p-3 darken-85 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-10 col-md-5 border-2 shadow border-light">
 					<p> Are you sure you want to permanently remove this item? </p>
 					<div class="d-flex flex-row flex-wrap mx-auto">
 						<button class="mx-2 text-light" @onclick="YouSure">No</button>
-						<button class="mx-2 rounded p-1 bg-danger" @onclick="Delete">Yes, remove it</button>
+						<button class="mx-2 rounded p-2 bg-danger" @onclick="Delete">Yes, remove it</button>
 					</div>
 				</div>
 			</div>
@@ -180,8 +191,8 @@
 	
 	@if (selectier != null)
 	{
-		<div class="maiedal">
-			<div class="p-0 p-md-2 d-flex col-12 col-md-8 rounded darken-95 flex-column mx-auto my-auto">
+		<div class="maiedal align-content-center">
+			<div class="d-flex p-1 p-md-2 col-12 col-md-6 darken-85 flex-column mx-auto my-auto shadow" style="border-radius: 1vw">
 				<div class="d-flex p-2 text-end justify-content-end">
 					<a class="clickable" @onclick="Exit">✖</a>
 				</div>
@@ -194,8 +205,8 @@
 		</div>
 		@if (yousure)
 		{
-			<div class="maiedal d-flex flex-column text-center justify-content-center">
-				<div class="p-0 p-md-2 darken-95 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-6">
+			<div class="maiedal d-flex flex-column text-center align-items-center align-content-center justify-content-center">
+				<div class="p-2 p-md-4 darken-85 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-5 border-2 border-light shadow">
 					<h5> Are you sure you want to permanently remove this tier? All items will be deleted with it!</h5>
 					<div class="d-flex flex-row flex-wrap mx-auto">
 						<button class="mx-2 text-light" @onclick="YouSure">No</button>
@@ -208,14 +219,15 @@
 	
 	@if (TierEdit)
 	{
-		<div class="maiedal">
-			<div class="p-2 d-flex col-12 col-md-8 rounded darken-95 flex-column mx-auto my-auto">
+		<div class="maiedal align-content-center">
+			<div class="p-3 d-flex col-12 col-md-7 shadow darken-85 flex-column mx-auto my-auto shadow" style="border-radius: 2vw;">
 				<div class="d-flex p-2 text-end justify-content-end">
 					<a class="clickable" @onclick="Exit">✖</a>
 				</div>
+				<div class="mx-1 mx-md-2">
 				@foreach (var pair in selected.tiers)
 				{
-					<div @key="@pair.Key" class="d-flex flex-wrap flex-md-nowrap mb-1" style="border-bottom: 2px solid; border-color: @(pair.Value.color)!important;">
+					<div @key="@pair.Key" class="d-flex flex-wrap flex-md-nowrap my-2 py-2 px-4 me-sm-3 me-md-0" style="border: 2px solid; border-radius: 10px; border-color: @(pair.Value.color)!important;">
 						<div class="d-flex m-1 flex-column text-center justify-content-center mx-auto col-12 col-sm-3 py-1 py-sm-1 py-md-auto">
 							<input type="text" value="@pair.Value.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center flex-fill col-12 text-wrap text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Value.ogname)" placeholder="Tier Title" style="background-color: @pair.Value.color">
 						</div>
@@ -229,16 +241,17 @@
 							}
 							else
 							{
-								<MudColorPicker Label="Tier Color" @bind-Text="pair.Value.color" Style="@($"color: {pair.Value.color};")" Placeholder="Select Color" Class="col-6" />
+								<MudColorPicker Label="Tier Color" @bind-Text="pair.Value.color" Style="@($"color: white;")" Placeholder="Select Color" Class="col-6" />
 							}
 							<div class="d-flex flex-column">
-								<button class="p-1 rounded mx-1 bg-secondary" @onclick="() => RearengeTier(pair.Key, -1)"><MudIcon Icon="@Icons.Material.Filled.KeyboardArrowUp" Title="MoveUp" /></button>
-								<button class="p-1 rounded mx-1 bg-secondary" @onclick="() => RearengeTier(pair.Key, 1)"><MudIcon Icon="@Icons.Material.Filled.KeyboardArrowDown" Title="MoveDown" /></button>
+								<button class="p-1 mx-1 bg-secondary" style="border-bottom: 1px solid; border-color: #ccc; border-top-left-radius: 4px; border-top-right-radius: 4px;" @onclick="() => RearengeTier(pair.Key, -1)"><MudIcon Icon="@Icons.Material.Filled.KeyboardArrowUp" Title="MoveUp" /></button>
+								<button class="p-1 mx-1 bg-secondary" style="border-top: 1px solid; border-color: #ccc; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px;" @onclick="() => RearengeTier(pair.Key, 1)"><MudIcon Icon="@Icons.Material.Filled.KeyboardArrowDown" Title="MoveDown" /></button>
 							</div>
-							<button class="mx-2 bg-danger my-2 px-1 rounded col-3 " @onclick="YouSure">Remove</button>
+							<button class="mx-2 bg-danger my-2 px-1 rounded col-3 me-10" @onclick="YouSure">Remove</button>
 						</div>
 					</div>
 				}
+				</div>
 			</div>
 		</div>
 		@if (yousure)
@@ -395,6 +408,8 @@
 
 	Dictionary<string, Virtualize<TierItem>> _virtualizeRefs = new();
 
+	bool Loading = true;
+
 	// selected tier
 	Tier? selectier;
 
@@ -438,12 +453,15 @@
 	{
 		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
 		await OnLoaded.InvokeAsync();
+		Loading = false;
 	}
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
-		if (firstRender) 
+		if (firstRender) {
 			await OnLoaded.InvokeAsync();
+			Loading = false;
+		}
 	}
 
 	void Toggle(ref bool thing)
@@ -579,7 +597,7 @@
 				}
 			Logger.LogInformation("Base4 string: " + b64);
 			selecitem.imgLocal = b64;*/
-																																																																											selecitem.imgBytes = imageBytes;
+																																																																																				selecitem.imgBytes = imageBytes;
 
 			await TrySave();
 
@@ -809,7 +827,8 @@
 				else
 				{
 					Logger.LogInformation("Regular tieritem DragDrop!");
-					if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert)) Logger.LogInformation("DragDop Failed: Recognised items, but failed operation");
+					var result = await Task.Run(() => DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert));
+					if (!result) Logger.LogInformation("DragDop Failed: Recognised items, but failed operation");
 					else
 					{
 						var temp3 = dragged.parent;
@@ -833,7 +852,8 @@
 				//Logger.LogInformation("Added dummy element");
 				DragDropApi<TierItem>.OverHere(overlist.items, overlist.items.Count - 1);
 				//Logger.LogInformation("Forced over dummy element");
-				if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace))
+				var res = await Task.Run(() => DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Replace));
+				if (!res)
 				{
 					Logger.LogInformation("Failed tier item swap");
 				}
@@ -846,7 +866,8 @@
 		}
 		else if (over != null)
 		{
-			if (!DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert))
+			var res = await Task.Run(() => DragDropApi<TierItem>.StopDrag(DragDropBehaviour.Insert));
+			if (!res)
 				Logger.LogInformation("DragDrop Failed: Couldn't recognise over tier, and failed fallback method");
 			else Logger.LogInformation("Fallback Tier-Based DragDrop");
 		}
@@ -854,7 +875,7 @@
 		{
 			Logger.LogInformation("DragDrop Failed: Couldn't recognise Overtier nor Over item");
 		}
-		await TrySave();
+		await Task.Run(() => TrySave());
 		if (mobile)
 		{
 			if (DragDropApi<TierItem>.GetOver() != null)

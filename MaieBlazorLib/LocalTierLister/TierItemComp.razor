@@ -108,10 +108,12 @@ else
 	CancellationTokenSource? dragDelayCts;
 	bool dragArmed = false;
 	bool dragStarted = false;
-	int dragthreshold = 500; // ms
+	int dragthreshold = 200; // ms
 	ElementReference elementRef;
 
 	string ImageUsed; // to differ local img and web image
+
+	bool imageLoading = true;
 
 	bool imageFailed = false;
 
@@ -130,6 +132,7 @@ else
 
 		//Image Priority: Web > Local > Text
 		// for debugging purposes though, prioritizing local
+		if (NoImage) return;
 		if (item.imgBytes != null){
 			ImageUsed = await LoadB64Image(item.imgBytes, "image/jpeg");
 			Logger.LogInformation("LocalImage");
@@ -146,10 +149,14 @@ else
 
 	async Task<string> LoadB64Image(byte[] imageBytes, string mimeType)
 	{
-		if (_blobUrl != null)
-			await JSRuntime.InvokeVoidAsync("revokeBlobUrl", _blobUrl); // cleanup old one
+		var res = await Task.Run(async () =>
+		{
+			if (_blobUrl != null)
+				await JSRuntime.InvokeVoidAsync("revokeBlobUrl", _blobUrl); // cleanup old one
 
-		return await JSRuntime.InvokeAsync<string>("createBlobUrl", imageBytes, mimeType);
+			return await JSRuntime.InvokeAsync<string>("createBlobUrl", imageBytes, mimeType);
+		});
+		return res;
 	}
 
 	void ImageFail()
