@@ -247,7 +247,7 @@ namespace MaieBlazorLib.LocalTierLister
             WriteIndented = true
         };
 
-        static string GetFolder()
+        public static string GetFolder()
         {
             return Path.Join(FileSystem.AppDataDirectory, "TierList");
         }
