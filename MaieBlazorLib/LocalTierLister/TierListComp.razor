@@ -21,16 +21,16 @@
 	{
 		<div class="col-12 d-flex darken-50 flex-column text-light m-0 m-md-2 rounded">
 			<div id="TIERLIST HEADER" class="d-flex flex-wrap flex-fill flex-row rounded">
-				<input type="text" class="d-flex spinput rounded col-4 me-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
+				<input type="text" class="d-flex spinput rounded col-12 col-md-4 me-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
 				<div class="d-flex flex-row flex-nowrap flex-fill py-1 me-4">
 					<div class="d-flex flex-nowrap justify-content-center align-items-center flex-fill me-2">
 						<MudTextField @bind-Value="filter" Placeholder="Search" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="m-0 mx-2 p-0 text-light flex-fill"></MudTextField>
-						<MudTooltip class="col-2" Color="Color.Transparent">
+						<MudTooltip class="col-6 col-md-3" Color="Color.Transparent">
 							<ChildContent>
 								<MudIcon Icon="@Icons.Material.Filled.Info"/>
 							</ChildContent>
 							<TooltipContent>
-								<div class="text-light darken-95 rounded p-3 m-0">
+								<div class="text-light darken-95 rounded p-3 m-0 col-12">
 									<p>Search normally for name. Use [] to search for tags (ex: [film])</p> 
 									<p>Composite search: </p>
 									<p>OR: use ',' between names <br />
@@ -94,21 +94,34 @@
 								}*@
 								@if (showcase)
 								{
-									<MudTooltip class="col-2" Color="Color.Transparent">
-										<ChildContent>
-											<TierItemComp item="@item" id="@idx" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(item == DragDropApi<TierItem>.GetOver())"
-											OnItemSelect="Select"
-											OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
-											OnItemDragStop="StopDrag"
-											OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
-											OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
-										</ChildContent>
-										<TooltipContent>
-											<div class="text-light darken-95 rounded p-3 m-0">
-												@item.name
-											</div>
-										</TooltipContent>
-									</MudTooltip>
+									if (!mobile)
+									{
+										<MudTooltip class="col-2" Color="Color.Transparent">
+											<ChildContent>
+												<TierItemComp item="@item" id="@idx" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(item == DragDropApi<TierItem>.GetOver())"
+															  OnItemSelect="Select"
+															  OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
+															  OnItemDragStop="StopDrag"
+															  OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
+															  OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
+											</ChildContent>
+											<TooltipContent>
+												<div class="text-light darken-95 rounded p-3 m-0">
+													@item.name
+												</div>
+											</TooltipContent>
+										</MudTooltip>
+									}
+									else
+									{
+										<TierItemComp item="@item" id="@idx" isminimal="@minimal" NoImage="@NoImg" OverStyle="@(item == DragDropApi<TierItem>.GetOver())"
+													  OnItemSelect="Select"
+													  OnItemDrag="() => DragDropApi<TierItem>.StartDrag(pair.Value.items, idx)"
+													  OnItemDragStop="StopDrag"
+													  OnItemOver="() => DragDropApi<TierItem>.OverHere(pair.Value.items, idx)"
+													  OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
+									}
+
 								}
 								else
 								{
