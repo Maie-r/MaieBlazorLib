@@ -20,38 +20,40 @@
 	else
 	{
 		<div class="col-12 d-flex darken-50 flex-column text-light m-0 m-md-2 rounded">
-			<div class="d-flex flex-wrap flex-fill flex-row rounded">
-				<input type="text" class="spinput rounded col-4 flex-fill me-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
-				<div class="row col-sm-4 col-md-3 col-lg-2 mx-2 my-1 d-flex flex-fill flex-wrap">
-					<div class="row p-0 col-12 d-flex">
-						<div class="d-flex col-12 p-0 flex-nowrap flex-fill flex-row">
-							<h5 class="clickable flex-fill p-2 m-0 text-center rounded btn bg-primary align-content-center" @onclick="Export"> Export Tierlist </h5>
-						</div>
+			<div id="TIERLIST HEADER" class="d-flex flex-wrap flex-fill flex-row rounded">
+				<input type="text" class="d-flex spinput rounded col-4 me-2 text-light p-2" @bind="@selected.name" placeholder="Tierlist Name">
+				<div class="d-flex flex-row flex-nowrap flex-fill py-1 me-4">
+					<div class="d-flex flex-nowrap justify-content-center align-items-center flex-fill me-2">
+						<MudTextField @bind-Value="filter" Placeholder="Search" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="m-0 mx-2 p-0 text-light flex-fill"></MudTextField>
+						<MudTooltip class="col-2" Color="Color.Transparent">
+							<ChildContent>
+								<MudIcon Icon="@Icons.Material.Filled.Info"/>
+							</ChildContent>
+							<TooltipContent>
+								<div class="text-light darken-95 rounded p-3 m-0">
+									<p>Search normally for name. Use [] to search for tags (ex: [film])</p> 
+									<p>Composite search: </p>
+									<p>OR: use ',' between names <br />
+									   ex: (Red, Green) ([film], [Neflix]) (Red, [Netflix])</p>
+									<p>AND: use '+' between names <br />
+									   ex: (Red+Green) ([film]+[Neflix]) (Red+[Netflix])</p>
+									<p>NOT: use '-' before the excluded name <br />
+									   ex: (Red+ -dark) ([film]+ -[Neflix]) (Red, -[Netflix])</p>
+								</div>
+							</TooltipContent>
+						</MudTooltip>
 					</div>
+					<div class="d-flex p-0 flex-nowrap flex-row mx-1">
+						<h5 class="clickable flex-fill p-2 m-0 text-center rounded btn bg-primary align-content-center" @onclick="Export"> Export Tierlist </h5>
+					</div>
+					@if (!showcase)
+					{
+						<div class="d-flex p-0 mx-1">
+							<h5 class="clickable flex-fill p-2 m-0 text-center rounded btn bg-highlight align-content-center" @onclick="() => Toggle(ref TierEdit)"> Edit Tiers </h5>
+						</div>
+					}
 				</div>
-				<MudTextField @bind-Value="filter" Placeholder="Search" Immediate="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="m-0 mt-2 mx-2 p-0 text-light"></MudTextField>
-
-				@if (!showcase)
-				{
-					<h5 class="clickable flex-fill p-2 m-2 text-center rounded btn bg-highlight align-content-center" @onclick="() => Toggle(ref TierEdit)"> Edit Tiers </h5>
-				}
 			</div>
-			@*TierItemComp item="dummyitem" id="0" isminimal="false" NoImage="true" OverStyle="@(dummyitem == DragDropApi<TierItem>.GetOver())"
-					  OnItemSelect="Select"
-					  OnItemDrag="() => DragDropApi<TierItem>.StartDrag(dummyTier.items, 0)"
-					  OnItemDragStop="StopDrag"
-					  OnItemOver="() => DragDropApi<TierItem>.OverHere(dummyTier.items, 0)"
-					  OnItemOut="DragDropApi<TierItem>.OuttaHere"></TierItemComp>
-		<div id="PLEASEDONTFORGETTODELETETHIS">
-			<a class="clickable draggable" draggable="false"
-				   data-tieritem-id="0"
-				   @onpointerdown="StartDrag"
-				   @onpointerup="StopDrag"
-				   @onpointercancel="StopDrag"
-				   style="touch-action: none!important;">
-					<p class="tieritem unselectable rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="font-size: 20px">GOD</p>
-			</a>
-		</div>*@
 			@foreach (var pair in selected.tiers)
 			{
 				<div class="p-0 m-0 d-flex darken-25 flex-md-row @(minimal ? "flex-sm-row" : "flex-column") col-12"
@@ -160,7 +162,10 @@
 				</div>
 				<div class="d-flex flex-column flex-wrap p-md-4 p-1 pt-0">
 				<img class="text-center d-flex mx-auto my-2" src="@selecImage" style="max-height: 50vh; max-width: 50vw; border: 1px solid; border: grey; border-radius: 2vw" />
-				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.name" placeholder="Item Name">
+				<div>
+					<p class="text-danger">@itemErrorText</p>
+				</div>
+				<input type="text" class="spinput rounded flex-fill text-light mx-2 p-2" @bind="@selecitem.name" @bind:after="@(() => Validate("name"))" placeholder="Item Name">
 				<div class="d-flex flex-nowrap col-12 p-2">
 					<input type="text" class="spinput rounded flex-fill text-light p-2 col-10" @bind="@selecitem.img" @bind:after="@(async () => selecImage = await GetSelectImage())" placeholder="Image Link"> 
 					@if (mobile)
@@ -169,7 +174,7 @@
 						<button class="btn bg-highlight col-2" @onclick="() => PickLocalImage(true)"><MudIcon Icon="@Icons.Material.Filled.CameraAlt" Color="Color.Default" Title="PickLocalCamera" /></button>
 					}
 				</div>
-				<input type="text" class="spinput rounded flex-fill text-light mx-2 my-1 p-2" @bind="@selecitemtags" @bind:after="UpdateTags" placeholder="Tags (separated by comma)">
+					<input type="text" class="spinput rounded flex-fill text-light mx-2 my-1 p-2" @bind="@selecitemtags" @bind:after="@(() => {Validate("tags"); UpdateTags();}) " placeholder="Tags (separated by comma)">
 				<input type="text" class="spinput rounded flex-fill text-light mx-2 my-1 p-3" @bind="@selecitem.notes" placeholder="Additional Notes">
 				<button class="bg-danger rounded m-2 p-1" @onclick="YouSure">Remove</button>
 				</div>
@@ -419,6 +424,7 @@
 	string selecitemtags = "";
 	string selecImage = "";
 	string? _selectbloburl;
+	string itemErrorText = "";
 
 	// modal confirm
 	bool yousure;
@@ -487,28 +493,58 @@
 
 	bool InFilter(TierItem item)
 	{
-		if (filter == "")
+		if (string.IsNullOrWhiteSpace(filter) || filter == "[" || filter == "]" || filter == "+" || filter == "-" || filter == ",")
 		{
 			return true;
 		}
 
-		string[] filters = filter.Split("+");
-		foreach (string f in filters)
+		// ',' is OR
+		string[] ORgroups = filter.Split(',');
+		foreach (string group in ORgroups)
 		{
-			if (f.IndexOf("[") > -1 && f.IndexOf("]") > -1)
+			bool groupMatch = true;
+
+			// '+' is AND
+			var ANDgroups = group.Split('+');
+
+			foreach (var condition in ANDgroups)
 			{
-				var tagf = f[1..^1]; //dang I've never seen this before
-				bool tagMatch = item.tags
-				.Any(t => t.Contains(tagf, StringComparison.OrdinalIgnoreCase));
-				if (tagMatch) return tagMatch;
-			}
-			else
-			{
-				if (item.name.Contains(f, StringComparison.OrdinalIgnoreCase))
+				var term = condition.Trim();
+
+				// starting with '-' is NOT
+				bool negate = term.StartsWith('-');
+				if (negate)
+					term = term[1..];
+
+				bool match;
+
+				if (term.StartsWith('[') && term.EndsWith(']'))
 				{
-					return true;
+					var tag = term[1..^1];
+
+					match = item.tags.Any(t =>
+						t.Contains(tag, StringComparison.OrdinalIgnoreCase));
+				}
+				else
+				{
+					match = item.name.Contains(
+						term,
+						StringComparison.OrdinalIgnoreCase);
+				}
+
+				if (negate)
+					match = !match;
+
+				if (!match)
+				{
+					groupMatch = false;
+					break;
 				}
 			}
+
+			// means one OR is true
+			if (groupMatch)
+				return true;
 
 		}
 		return false;
@@ -544,6 +580,57 @@
 		selecImage = await GetSelectImage();
 		await OnLoaded.InvokeAsync("Item Loaded!");
 
+	}
+
+	void Validate(string field)
+	{
+		itemErrorText = "";
+		switch (field)
+		{
+			case "name":
+				if (selecitem!.name.StartsWith('-'))
+				{
+					itemErrorText = "The item name cannot start with '-'.";
+					selecitem.name = selecitem.name.Replace("-", "");
+				}
+				else if (selecitem!.name.Contains(','))
+				{
+					itemErrorText = "The item name cannot contain any commas (',').";
+					selecitem.name = selecitem.name.Replace(",", "");
+				}
+				else if (selecitem!.name.Contains('+'))
+				{
+					itemErrorText = "The item name cannot contain any '+' symbols.";
+					selecitem.name = selecitem.name.Replace("+", "");
+				}
+				else itemErrorText = "";
+				break;
+			case "tags":
+				bool cleanup = false;
+				foreach (var tag in selecitemtags.Split(','))
+				{
+					if (selecitemtags.StartsWith('-'))
+					{
+						itemErrorText = "The tags cannot start with '-'."; cleanup = true; break;
+					}
+					else if (selecitemtags.Contains('+'))
+					{
+						itemErrorText = "The tags cannot contain any '+' symbols."; cleanup = true; break;
+					}
+					else itemErrorText = "";
+				}
+				if (cleanup)
+				{
+					selecitemtags = selecitemtags.Trim();
+					selecitemtags = selecitemtags.Replace("+", "");
+					selecitemtags = selecitemtags.Replace(", -", ", ");
+					selecitemtags = selecitemtags.Replace(",-", ",");
+					selecitemtags = selecitemtags.Replace(" -", "");
+					if (selecitemtags.StartsWith("-"))
+						selecitemtags = selecitemtags[1..];
+				}
+				break;
+		}
 	}
 
 	void SelectTier(MouseEventArgs e, string tier)
@@ -597,7 +684,7 @@
 				}
 			Logger.LogInformation("Base4 string: " + b64);
 			selecitem.imgLocal = b64;*/
-																																																																																				selecitem.imgBytes = imageBytes;
+																																																																																							selecitem.imgBytes = imageBytes;
 
 			await TrySave();
 
@@ -617,6 +704,7 @@
 		if (selecitem != null)
 			selecitem.Renderversion++; // force image refresh
 		selecitem = null;
+		itemErrorText = "";
 		selectier = null;
 		TierEdit = false;
 		selecitemtier = "";
