@@ -1,14 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Maui.Storage;
-using MudBlazor;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Storage;
+using MudBlazor;
 
 
 namespace MaieBlazorLib.LocalTierLister
@@ -213,6 +214,7 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public string name { get; set; }
         public List<TierDTO> tiers { get; set; }
+        public string? lastModified { get; set; }
 
         public static TierListDTO ToDTO(TierList tierlist)
         {
@@ -221,6 +223,7 @@ namespace MaieBlazorLib.LocalTierLister
             tlDTO.tiers = new List<TierDTO>();
             foreach (var tierPair in tierlist.tiers)
                 tlDTO.tiers.Add(TierDTO.ToDTO(tierPair.Value));
+            tlDTO.lastModified = tierlist.lastModified.ToString("O");
 
             return tlDTO;
         }
@@ -234,6 +237,8 @@ namespace MaieBlazorLib.LocalTierLister
                 Tier t = TierDTO.ToObject(tDTO);
                 tl.tiers.Add(t.name, t);
             }
+            if (tierlistDTO.lastModified != null)
+                tl.lastModified = DateTime.ParseExact(tierlistDTO.lastModified, "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
             return tl;
         }
 
@@ -256,6 +261,7 @@ namespace MaieBlazorLib.LocalTierLister
         public string name { get; set; }
         public string color { get; set; }
         public List<TierItemDTO> items { get; set; }
+        public string? lastModified { get; set; }
 
         static public TierDTO ToDTO(Tier tier)
         {
@@ -265,6 +271,7 @@ namespace MaieBlazorLib.LocalTierLister
             tDTO.items = new List<TierItemDTO>();
             foreach (TierItem ti in tier.items)
                 tDTO.items.Add(TierItemDTO.ToDTO(ti));
+            tDTO.lastModified = tier.lastModified.ToString("O");
 
             return tDTO;
         }
@@ -279,6 +286,8 @@ namespace MaieBlazorLib.LocalTierLister
                 ti.parent = t;
                 t.items.Add(ti);
             }
+            if (tierDTO.lastModified != null)
+                t.lastModified = DateTime.ParseExact(tierDTO.lastModified, "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
             return t;
         }
 
@@ -305,6 +314,7 @@ namespace MaieBlazorLib.LocalTierLister
         public string imgMime { get; set; }
         public string[] tags { get; set; }
         public string notes { get; set; }
+        public string? lastModified { get; set; }
 
         public static TierItemDTO ToDTO(TierItem tierItem)
         {
@@ -315,6 +325,7 @@ namespace MaieBlazorLib.LocalTierLister
             tiDTO.imgBytes = tierItem.imgBytes;
             tiDTO.imgMime = tierItem.imgMime;
             tiDTO.tags = tierItem.tags;
+            tiDTO.lastModified = tierItem.lastModified.ToString("O");
             if (tiDTO.tags == null) tiDTO.tags = Array.Empty<string>();
             tiDTO.notes = tierItem.notes;
             return tiDTO;
@@ -329,6 +340,8 @@ namespace MaieBlazorLib.LocalTierLister
             ti.imgBytes = tierItemDTO.imgBytes;
             ti.imgMime = tierItemDTO.imgMime;
             ti.tags = tierItemDTO.tags;
+            if (tierItemDTO.lastModified != null)
+                ti.lastModified = DateTime.ParseExact( tierItemDTO.lastModified, "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
             if (ti.tags == null) ti.tags = Array.Empty<string>();
             ti.notes = tierItemDTO.notes;
             return ti;

@@ -314,6 +314,7 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public Dictionary<string, Tier> tiers;
         public string name;
+        public DateTime lastModified { get; set; } = DateTime.UtcNow;
 
         public TierList(string name)
         {
@@ -327,6 +328,32 @@ namespace MaieBlazorLib.LocalTierLister
             tiers = new Dictionary<string, Tier>();
             if (templatefill)
                 TemplateTiers();
+        }
+
+        public void ModifiedNow(TierItem item)
+        {
+            item.lastModified = DateTime.UtcNow;
+
+            var tier = item.parent;
+            if (tier != null)
+            {
+                tier.lastModified = item.lastModified;
+                return;
+            }
+                
+            this.lastModified = item.lastModified;
+        }
+
+        public void ModifiedNow(Tier tier)
+        {
+            tier.lastModified = DateTime.UtcNow;
+
+            this.lastModified = tier.lastModified;
+        }
+
+        public void ModifiedNow()
+        {
+            this.lastModified = DateTime.UtcNow;
         }
 
         void TemplateTiers()
@@ -361,6 +388,7 @@ namespace MaieBlazorLib.LocalTierLister
         public string ogname;
         public string color;
         public List<TierItem> items;
+        public DateTime lastModified { get; set; } = DateTime.UtcNow;
         public Tier(string name, string color)
         {
             this.name = name;
@@ -408,6 +436,7 @@ namespace MaieBlazorLib.LocalTierLister
         public string imgMime { get; set; }
         public string[] tags { get; set; }
         public string notes { get; set; }
+        public DateTime lastModified { get; set; } = DateTime.UtcNow;
         public Tier? parent { get; set; }
         public TierItemComp? ComponentInstance { get; set; }
         public int Renderversion { get; set; } = 1;
