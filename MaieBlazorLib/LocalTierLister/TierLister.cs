@@ -66,7 +66,7 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public Dictionary<string, Tier> tiers;
         public string name;
-        public string color;
+        public string color { get; set; } = "#a050dc";
         public DateTime lastModified { get; set; } = DateTime.UtcNow;
 
         public TierList(string name)

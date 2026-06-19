@@ -41,7 +41,7 @@ namespace MaieBlazorLib.LocalTierLister
         public static string GetTierFontSize(string name, double multiplier)
         {
             double size;
-            if (name.Length > 8)
+            if (name.Length > 6)
             {
                 size = (1 - (((double)name.Length + 1) / (name.Length + 1.5))) * 400;
             }

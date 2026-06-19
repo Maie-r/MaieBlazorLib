@@ -1,5 +1,4 @@
-﻿@page "/tier"
-@using System.Globalization
+﻿@using System.Globalization
 @using System.Collections
 @using Microsoft.Extensions.Logging
 @using Microsoft.Maui.Media
@@ -8,7 +7,6 @@
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 @inject ILogger<TierListComp> Logger
 @inject IJSRuntime JSRuntime
-<link href="css/charactercolor.css" rel="stylesheet" />
 
 <div style="overflow: hidden">
 		<div class="maiedal align-content-center">
@@ -21,7 +19,7 @@
 				{
 					<div @key="@pair.Key" class="d-flex flex-wrap flex-md-nowrap my-2 py-2 px-4 me-sm-3 me-md-0" style="border: 2px solid; border-radius: 10px; border-color: @(pair.Value.color)!important;">
 						<div class="d-flex m-1 flex-column text-center justify-content-center mx-auto col-12 col-sm-3 py-1 py-sm-1 py-md-auto">
-							<input type="text" value="@pair.Value.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center flex-fill col-12 text-wrap" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Value.ogname)" placeholder="Tier Title" style="background-color: @pair.Value.color; color: @GlobalStyleFunctions.GetMostReadableTextColor(pair.Value.color)">
+							<input type="text" value="@pair.Value.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center smoothBlending flex-fill col-12 text-wrap" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Value.ogname)" placeholder="Tier Title" style="background-color: @pair.Value.color; color: @GlobalStyleFunctions.GetMostReadableTextColor(pair.Value.color)">
 						</div>
 						<div class="col-12 col-md-9 m-1 d-flex flex-row flex-fill">
 							@if (false) // TODO: the mudcolorpicker takes a while to loadon mobile, but input color is janky as well

@@ -184,11 +184,13 @@ namespace MaieBlazorLib.LocalTierLister
         public string name { get; set; }
         public List<TierDTO> tiers { get; set; }
         public string? lastModified { get; set; }
+        public string color { get; set; }
 
         public static TierListDTO ToDTO(TierList tierlist)
         {
             TierListDTO tlDTO = new TierListDTO();
             tlDTO.name = tierlist.name;
+            tlDTO.color = tierlist.color;
             tlDTO.tiers = new List<TierDTO>();
             foreach (var tierPair in tierlist.tiers)
                 tlDTO.tiers.Add(TierDTO.ToDTO(tierPair.Value));
@@ -201,6 +203,7 @@ namespace MaieBlazorLib.LocalTierLister
         {
             TierList tl = new TierList(tierlistDTO.name);
             tl.tiers = new Dictionary<string, Tier>();
+            tl.color = tierlistDTO.color;
             foreach (TierDTO tDTO in tierlistDTO.tiers)
             {
                 Tier t = TierDTO.ToObject(tDTO);
