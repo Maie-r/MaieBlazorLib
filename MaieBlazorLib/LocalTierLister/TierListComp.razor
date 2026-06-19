@@ -349,8 +349,6 @@
 
 	bool mobile;
 
-	CancellationTokenSource? _saveCts;
-
 	// ghost throttle
 	DateTime lastPointerMove = DateTime.MinValue;
 	const int pointerThrottleMs = 16; // 60fps
@@ -602,22 +600,7 @@
 
 	async Task TrySave()
 	{
-		_saveCts?.Cancel();
-		_saveCts = new CancellationTokenSource();
-		var token = _saveCts.Token;
-
-		try
-		{
-			await Task.Delay(500, token);
-			if (tl != null)
-			{
-				await Task.Run(() => tl.SaveAll(), token);
-				Logger.LogInformation("Saving!");
-			}
-			await OnSave.InvokeAsync();
-		}
-		catch (OperationCanceledException) { /* debounced away, that's fine */ }
-
+		await InvokeAsync(() => OnSave.InvokeAsync());
 	}
 
 	// ------------ ITEM DELETION

@@ -18,10 +18,16 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public List<TierListDTO> TierLists { get; set; }
 
-
         public TierListSaveData()
         {
             TierLists = new();
+        }
+
+        public TierListSaveData(TierLister tl)
+        {
+            this.TierLists = new List<TierListDTO>();
+            foreach (TierList t in tl.TierLists)
+                this.TierLists.Add(TierListDTO.ToDTO(t));
         }
         public TierListSaveData(List<TierList> TierLists) 
         {
@@ -30,82 +36,12 @@ namespace MaieBlazorLib.LocalTierLister
                 this.TierLists.Add(TierListDTO.ToDTO(tl));
         }
 
-        public static void Save(TierListSaveData saveData, string filename)
-        {
-            string folder = GetFolder();
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-            string jsonString = JsonSerializer.Serialize(saveData, options);
-            File.WriteAllText(Path.Combine(folder, filename + ".json"), jsonString);
-        }
-
-        public void Save(string filename)
-        {
-            try
-            {
-                Save(this, filename);
-
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error saving TierListSaveData to file: {ex.Message}");
-                throw;
-            }
-        }
-
-        public static async Task SaveAsync(TierListSaveData saveData, string filename)
-        {
-            string folder = GetFolder();
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-            string path = Path.Combine(folder, filename + ".json");
-            await using var stream = File.Create(path);
-            await JsonSerializer.SerializeAsync(stream, saveData, options);
-        }
-
-        public async Task SaveAsync(string filename)
-        {
-            try
-            {
-                await SaveAsync(this, filename);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error saving TierListSaveData to file: {ex.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Load from a local file with filename
-        /// </summary>
-        /// <returns>Converted List<TierList></returns>
-        public static List<TierList> LoadFrom(string filename)
-        {
-            try
-            {
-                var path = Path.Combine(GetFolder(), filename + ".json");
-                string jsonString = File.ReadAllText(path);
-                return LoadFromRaw(jsonString);
-            }
-            catch (FileNotFoundException)
-            {
-                Debug.WriteLine($"File not found: {filename}.json");
-                throw new FileNotFoundException($"File not found: {filename}.json");
-
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error loading TierListSaveData from file: {ex.Message}");
-                throw;
-            }
-        }
-
+        // IMPORT -----------------------------------------
         /// <summary>
         /// Load from a Json that represents a list of Tier Lists (DTOS)
         /// </summary>
         /// <returns>Converted List<TierList></returns>
-        public static List<TierList> LoadFromRaw(string DataJson)
+        public static List<TierList> ImportSaveData(string DataJson)
         {
             try
             {
@@ -175,6 +111,8 @@ namespace MaieBlazorLib.LocalTierLister
             return result;
         }
 
+
+        // EXPORT ------------------------------------------
         public static string ExportTierList(List<TierList> lists)
         {
             TierListSaveData saveData = new TierListSaveData(lists);
@@ -196,9 +134,40 @@ namespace MaieBlazorLib.LocalTierLister
             return jsonString;
         }
 
-        static string GetFolder()
+        public static string ExportJson(TierListSaveData saveData)
         {
-            return Path.Join(FileSystem.AppDataDirectory, "TierList");
+            try
+            {
+                return JsonSerializer.Serialize(saveData, options);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error exporting TierListSaveData as JSON: {ex.Message}");
+            }
+        }
+
+        public string ExportJson()
+        {
+            return ExportJson(this);
+        }
+
+        public static async Task<string> ExportJsonAsync(TierListSaveData saveData)
+        {
+            try
+            {
+                await using var stream = new MemoryStream();
+                await JsonSerializer.SerializeAsync(stream, saveData, options);
+                return Encoding.UTF8.GetString(stream.ToArray());
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error export TierListSaveData as JSON: {ex.Message}");
+            }
+        }
+
+        public async Task<string> ExportJsonAsync()
+        {
+            return await ExportJsonAsync(this);
         }
 
         static JsonSerializerOptions options = new()

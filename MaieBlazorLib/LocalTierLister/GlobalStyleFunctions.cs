@@ -11,7 +11,6 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public static string GetMostReadableTextColor(string hexColor)
         {
-            Debug.WriteLine(hexColor);
             double Lumithreshold = 0.6;
             double Alphathreshold = 0.7;
             hexColor = hexColor.TrimStart('#');

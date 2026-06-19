@@ -15,121 +15,30 @@ namespace MaieBlazorLib.LocalTierLister
         public List<TierList> TierLists;
         public TierLister()
         {
-            LoadStuff();
+            TierLists = new();
         }
-
-        public TierLister(string link)
-        {
-            LoadStuff(link);
-        }
-
-        public static TierList? GetSpecificList(string link, string name)
-        {
-            if (File.Exists(link))
-            {
-                string[] tierlists = File.ReadAllText(link).Split(';');
-                foreach (string tierlist in tierlists) // every tier list
-                {
-                    if (tierlist.Split("/-/")[0].Contains(name))
-                        return ReadList(tierlist);
-                }
-            }
-            /*StreamReader sw = new StreamReader(link);
-            string line;
-            for (line = sw.ReadLine(); !line.Contains(name) && line != null; line = sw.ReadLine());
-            if (line != null) // if the list does not exist
-            {
-                string list = "\r\n" + line;
-                while (!line.StartsWith(';') && line != null)
-                {
-                    Debug.WriteLine(line);
-                    list += line;
-                    line = sw.ReadLine();
-                }
-                list += "\r\n";
-                return ReadList(list);
-            }*/
-            Debug.WriteLine($"Couldn't find list {name} at {link} !!");
-            return null;
-        }
-
-        // DEPRECATED (old loading)
-        static async Task<List<TierList>?> LoadFrom(string fileName)
-        {
-            List<TierList> TierLists = new List<TierList>();
-
-            var path = Path.Combine(GetMainFolder(), fileName);
-
-            if (!File.Exists(path))
-                return null;
-
-            string contents = await File.ReadAllTextAsync(path);
-            string[] tierlists = contents.Split(';');
-            foreach (string tierlist in tierlists) // every tier list
-            {
-                TierList temp = ReadList(tierlist);
-                TierLists.Add(temp);
-            }
-            return TierLists;
-        }
-
-        async void LoadStuff()
-        {
-            Directory.CreateDirectory(GetMainFolder());
-            await LoadStuff(Path.Join(GetMainFolder(), "lists"));
-        }
-
-        async Task LoadStuff(string filename)
+        public TierLister(string DataJson)
         {
             try
             {
-                TierLists = TierListSaveData.LoadFrom(filename);
-                Debug.WriteLine(TierLists.Count);
-            }
-            catch (FileNotFoundException e)
-            {
-                Debug.WriteLine("Attempting loading with legacy options...");
-                // Legacy fallback
-                try
-                {
-                    TierLists = new List<TierList>();
-                    //Debug.WriteLine("loading from " + link);
-                    var link = Path.Join(GetMainFolder(), "lists.txt");
-
-                    if (!File.Exists(link))
-                    {
-                        await File.WriteAllTextAsync(link, string.Empty);
-                    }
-                    string content = await File.ReadAllTextAsync(link);
-                    //Debug.WriteLine(content);
-                    string[] tierlists = content.Split(';');
-                    foreach (string tierlist in tierlists) // every tier list
-                    {
-                        //Debug.WriteLine("Ahoy!");
-                        TierList temp = ReadList(tierlist);
-                        TierLists.Add(temp);
-                    }
-                    Debug.WriteLine("Loaded legacy data and parsed it into current structure successfully!");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Failed to load tierlists: " + ex.Message);
-                    TierLists = new List<TierList>();
-                }
+                var tl = LoadFromJson(DataJson);
+                this.TierLists = tl;
+                Debug.WriteLine(TierLists.Count + " Tierlists loaded!");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Failed to load tierlists: " + ex.Message);
-                TierLists = new List<TierList>();
+                Debug.WriteLine(ex);
+                TierLists = new();
             }
-
         }
-
+        
+        // LOADING ----------------------
         public List<TierList> LoadFromJson(string json)
         {
-            return TierListSaveData.LoadFromRaw(json);
+            return TierListSaveData.ImportSaveData(json);
         }
 
+        // SAVING -----------------------
         public static string ExportJson(TierLister tl)
         {
             return TierListSaveData.ExportTierList(tl.TierLists);
@@ -138,158 +47,18 @@ namespace MaieBlazorLib.LocalTierLister
         {
             return TierListSaveData.ExportTierList(tl);
         }
-
+        public static async Task<string> ExportJsonAsync(TierLister tl)
+        {
+            return await TierListSaveData.ExportJsonAsync(new TierListSaveData(tl));
+        }
+        
         public string ExportJson()
         {
             return ExportJson(this);
         }
-
-        // DEPRECATED
-        /// <summary>
-        /// It will only update by replacing a tierlist with the same name as the one in the parameter
-        /// </summary>
-        public static async void SaveSpecific(string link, TierList newtl)
+        public async Task<string> ExportJsonAsync()
         {
-            List<TierList> TierLists = await LoadFrom(link);
-            Debug.WriteLine(TierLists.Count);
-            for (int j = 0; j < TierLists.Count; j++)
-            {
-                if (TierLists[j].name == newtl.name)
-                {
-                    Debug.WriteLine("Match found");
-                    TierLists[j] = newtl;
-                    break;
-                }
-            }
-            string result = "";
-            int i = 0;
-            foreach (var list in TierLists) // each tier list
-            {
-                i++;
-                result += list.name;
-                foreach (Tier tier in list.tiers.Values)
-                {
-                    result += $"/-/{tier.name},{tier.color}\r\n";
-                    foreach (var item in tier.items)
-                    {
-                        //Debug.WriteLine($"{item.name}, {item.img}");
-                        result += $"{item.name},{item.img}" + "\r\n";
-                    }
-                }
-                if (i < TierLists.Count)
-                {
-                    result += ";";
-                }
-            }
-            await File.WriteAllTextAsync(link, result);
-        }
-
-
-        public async Task SaveAll()
-        {
-            try
-            {
-                await SaveAllJson();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e.Message);
-                try
-                {
-                    SaveAllLegacy();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Failed to save tierlists after two attempts: " + ex.Message);
-                }
-            }
-        }
-
-        public async Task SaveAllJson()
-        {
-            string folder = GetMainFolder();
-            Directory.CreateDirectory(folder);
-            string filePath = Path.Combine(folder, "lists");
-            if (this.TierLists == null || this.TierLists.Count <= 0)
-            {
-                Debug.WriteLine("No Tierlists to save.");
-                var emptysave = new TierListSaveData(new List<TierList>());
-                await emptysave.SaveAsync(filePath);
-                return;
-            }
-            //var json = JsonSerializer.Serialize(championship, options);
-            var saveData = new TierListSaveData(this.TierLists);
-            await saveData.SaveAsync(filePath);
-        }
-
-        static JsonSerializerOptions options = new()
-        {
-            //ReferenceHandler = ReferenceHandler.Preserve,
-            //DefaultIgnoreCondition = JsonIgnoreCondition.Never,
-            IncludeFields = true,
-            WriteIndented = true
-        };
-
-        public static string GetMainFolder()
-        {
-            return Path.Join(FileSystem.AppDataDirectory, "TierList");
-        }
-
-        // DEPRECATED ------------------------------------------
-        static TierList ReadList(string tierlist)
-        {
-            string[] sep1 = tierlist.Split("/-/");
-            TierList temp = new TierList(sep1[0]);
-            for (int i = 1; i < sep1.Length; i++) // every tier
-            {
-                string[] sep2 = sep1[i].Split("\r\n");
-                Tier temp2 = new Tier(sep2[0].Split(','));
-                try
-                {
-                    temp.tiers.Add(temp2.name, temp2);
-                }
-                catch
-                {
-                    temp.tiers.Add(temp2.name + "(1)", temp2);
-                }
-                //Debug.WriteLine(sep2.Length);
-                for (int j = 1; j < sep2.Length; j++) // every item
-                {
-                    if (sep2[j] == "") { break; }
-                    temp.tiers[temp2.name].items.Add(new TierItem(sep2[j], temp2));
-                }
-
-            }
-            return temp;
-        }
-
-        public async void SaveAllLegacy()
-        {
-            // Legacy fallback
-            Debug.WriteLine("Saving");
-            string folder = GetMainFolder();
-            string result = "";
-            int i = 0;
-            foreach (var list in TierLists) // each tier list
-            {
-                i++;
-                result += list.name;
-                foreach (Tier tier in list.tiers.Values)
-                {
-                    result += $"/-/{tier.name},{tier.color}\r\n";
-                    foreach (var item in tier.items)
-                    {
-                        //Debug.WriteLine($"{item.name}, {item.img}");
-                        result += $"{item.name},{item.img}" + "\r\n";
-                    }
-                }
-                if (i < TierLists.Count)
-                {
-                    result += ";";
-                }
-
-            }
-            await File.WriteAllTextAsync(Path.Join(folder, "lists.txt"), result);
+            return await ExportJsonAsync(this);
         }
     }
 
