@@ -91,15 +91,11 @@
 
 	bool mobile;
 
+	// --------- INITIAL LOADING
 	protected override async Task OnInitializedAsync()
 	{
 		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
 		await SetLect();
-	}
-
-	async Task UpdateModifiedDate()
-	{
-		await OnChanged.InvokeAsync();
 	}
 
 	async Task SetLect()
@@ -116,6 +112,18 @@
 
 	}
 
+	// --------- GENERAL FUNCTIONS
+	async Task UpdateModifiedDate()
+	{
+		await OnChanged.InvokeAsync();
+	}
+
+	void YouSure()
+	{
+		yousure = !yousure;
+	}
+
+	// ---------- INPUT VALIDATION AND UPDATE
 	void Validate(string field)
 	{
 		itemErrorText = "";
@@ -179,6 +187,32 @@
 		await OnLoaded.InvokeAsync("Tags Updated!");
 	}
 
+	// ---------- EXIT MODAL
+	async Task Exit()
+	{
+		Dispose();
+		await OnExit.InvokeAsync();
+	}
+
+	public void Dispose()
+	{
+		if (_selectbloburl != null)
+			JSRuntime.InvokeVoidAsync("revokeBlobUrl", _selectbloburl);
+	}
+
+	// ---------- IMAGE HANDLING
+	async Task<string> GetSelectImage()
+	{
+		if (selecitem == null) return "";
+
+		var res = "";
+
+		if (selecitem.imgBytes != null)
+			return await LoadB64Image(selecitem.imgBytes, "image/jpeg");
+		else
+			return selecitem.img;
+	}
+
 	async Task PickLocalImage(bool Camera)
 	{
 		if (mobile)
@@ -188,7 +222,7 @@
 				photo = await MediaPicker.Default.CapturePhotoAsync();
 			else
 			{
-				var ptos = await MediaPicker.Default.PickPhotosAsync(new MediaPickerOptions() { SelectionLimit = 1});
+				var ptos = await MediaPicker.Default.PickPhotosAsync(new MediaPickerOptions() { SelectionLimit = 1 });
 				photo = ptos[0];
 			}
 			if (photo is null) return;
@@ -217,28 +251,6 @@
 		}
 	}
 
-	async Task Exit()
-	{
-		await OnExit.InvokeAsync();
-	}
-
-	void YouSure()
-	{
-		yousure = !yousure;
-	}
-
-	async Task<string> GetSelectImage()
-	{
-		if (selecitem == null) return "";
-
-		var res = "";
-
-		if (selecitem.imgBytes != null)
-			return await LoadB64Image(selecitem.imgBytes, "image/jpeg");
-		else
-			return selecitem.img;
-	}
-
 	async Task<string> LoadB64Image(byte[] imageBytes, string mimeType)
 	{
 		if (_selectbloburl != null)
@@ -248,9 +260,5 @@
 	}
 
 
-	public void Dispose()
-	{
-		if (_selectbloburl != null)
-			JSRuntime.InvokeVoidAsync("revokeBlobUrl", _selectbloburl);
-	}
+	
 }

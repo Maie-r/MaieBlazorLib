@@ -53,12 +53,12 @@ namespace MaieBlazorLib.LocalTierLister
             return null;
         }
 
-        // DEPRECATED
+        // DEPRECATED (old loading)
         static async Task<List<TierList>?> LoadFrom(string fileName)
         {
             List<TierList> TierLists = new List<TierList>();
 
-            var path = Path.Combine(GetFolder(), fileName);
+            var path = Path.Combine(GetMainFolder(), fileName);
 
             if (!File.Exists(path))
                 return null;
@@ -73,28 +73,10 @@ namespace MaieBlazorLib.LocalTierLister
             return TierLists;
         }
 
-        /* WINDOWS ONLY IMPLEMENTATION
-        static List<TierList> LoadFrom(string link)
-        {
-            List<TierList> TierLists = new List<TierList>();
-
-            if (!File.Exists(link))
-            {
-                return null;
-            }
-            string[] tierlists = File.ReadAllText(link).Split(';');
-            foreach (string tierlist in tierlists) // every tier list
-            {
-                TierList temp = ReadList(tierlist);
-                TierLists.Add(temp);
-            }
-            return TierLists;
-        }*/
-
         async void LoadStuff()
         {
-            Directory.CreateDirectory(GetFolder());
-            await LoadStuff(Path.Join(GetFolder(), "lists"));
+            Directory.CreateDirectory(GetMainFolder());
+            await LoadStuff(Path.Join(GetMainFolder(), "lists"));
         }
 
         async Task LoadStuff(string filename)
@@ -112,7 +94,7 @@ namespace MaieBlazorLib.LocalTierLister
                 {
                     TierLists = new List<TierList>();
                     //Debug.WriteLine("loading from " + link);
-                    var link = Path.Join(GetFolder(), "lists.txt");
+                    var link = Path.Join(GetMainFolder(), "lists.txt");
 
                     if (!File.Exists(link))
                     {
@@ -162,6 +144,7 @@ namespace MaieBlazorLib.LocalTierLister
             return ExportJson(this);
         }
 
+        // DEPRECATED
         /// <summary>
         /// It will only update by replacing a tierlist with the same name as the one in the parameter
         /// </summary>
@@ -206,7 +189,7 @@ namespace MaieBlazorLib.LocalTierLister
         {
             try
             {
-                SaveAllJson();
+                await SaveAllJson();
             }
             catch (Exception e)
             {
@@ -222,9 +205,9 @@ namespace MaieBlazorLib.LocalTierLister
             }
         }
 
-        public async void SaveAllJson()
+        public async Task SaveAllJson()
         {
-            string folder = GetFolder();
+            string folder = GetMainFolder();
             Directory.CreateDirectory(folder);
             string filePath = Path.Combine(folder, "lists");
             if (this.TierLists == null || this.TierLists.Count <= 0)
@@ -236,7 +219,7 @@ namespace MaieBlazorLib.LocalTierLister
             }
             //var json = JsonSerializer.Serialize(championship, options);
             var saveData = new TierListSaveData(this.TierLists);
-            saveData.SaveAsync(filePath);
+            await saveData.SaveAsync(filePath);
         }
 
         static JsonSerializerOptions options = new()
@@ -247,7 +230,7 @@ namespace MaieBlazorLib.LocalTierLister
             WriteIndented = true
         };
 
-        public static string GetFolder()
+        public static string GetMainFolder()
         {
             return Path.Join(FileSystem.AppDataDirectory, "TierList");
         }
@@ -284,7 +267,7 @@ namespace MaieBlazorLib.LocalTierLister
         {
             // Legacy fallback
             Debug.WriteLine("Saving");
-            string folder = GetFolder();
+            string folder = GetMainFolder();
             string result = "";
             int i = 0;
             foreach (var list in TierLists) // each tier list
@@ -314,6 +297,7 @@ namespace MaieBlazorLib.LocalTierLister
     {
         public Dictionary<string, Tier> tiers;
         public string name;
+        public string color;
         public DateTime lastModified { get; set; } = DateTime.UtcNow;
 
         public TierList(string name)

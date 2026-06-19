@@ -61,7 +61,11 @@
 					<a class="text-box-container d-flex clickable text-center justify-content-center @(minimal ? "col-1 flex-row" : "flex-row") align-items-center py-1 py-sm-1 py-md-auto me-1"
 					@onmousedown="(e) => SelectTier(e, pair.Key)" style="background-color: @pair.Value.color"
 					data-tier-id="@pair.Key">
-						<input type="text" value="@pair.Value.name" class="tierput rounded d-flex py-md-auto p-1 m-0 flex-fill text-wrap overflow-visible text-break text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Key)" placeholder="Tier Title" style="@GetFontSize(pair.Value.name); white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
+						<input type="text" value="@pair.Value.name" 
+							class="tierput rounded d-flex py-md-auto p-1 m-0 flex-fill text-wrap overflow-visible text-break" 
+							@onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Key)" placeholder="Tier Title" 
+							style="@GlobalStyleFunctions.GetTierFontSize(pair.Value.name, minimal ? 0.7 : 1); white-space: normal; word-wrap: break-word; overflow-wrap: break-word; color: @GlobalStyleFunctions.GetMostReadableTextColor(pair.Value.color)"
+						>
 						@*<MudTextField @bind-Value="pair.Value.name" T="string" Text="@pair.Value.name" Variant="Variant.Outlined" @onblur="() => ChangeTierName(pair.Value)" AutoGrow Lines="4" Class="d-flex flex-column text-center justify-content-center text-light border-0" Style="@GetFontSize(pair.Value.name)"></MudTextField>*@
 					</a>
 					@*<a id="pair.Value.name" class="text-box-container d-flex clickable flex-column text-center justify-content-center col-sm-1 py-1 py-sm-1 py-md-auto me-1" @onmousedown="(e) => SelectTier(e, pair.Key)" style="background-color: @pair.Value.color">
@@ -352,6 +356,7 @@
 	const int pointerThrottleMs = 16; // 60fps
 	bool handlingPointerMove = false;
 
+	// ------------ GENERAL FUNCTIONS
 	protected override async Task OnInitializedAsync()
 	{
 		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
@@ -372,22 +377,82 @@
 		thing = !thing;
 	}
 
-	string GetFontSize(string name)
+	async Task Export()
 	{
-		double size;
-		if (name.Length > 8)
+		await OnLoadingStart.InvokeAsync("Exporting Data to Clipboard...");
+		var json = TierLister.ExportJson(selected);
+		if (string.IsNullOrEmpty(json))
 		{
-			size = (1 - (((double)name.Length + 1) / (name.Length + 1.5))) * 400;
+			await OnError.InvokeAsync("Couldn't export tierlist: no JSON produced from TierService.tl.ExportJson()");
+			await OnLoaded.InvokeAsync();
+			return;
 		}
-		else
+
+		try
 		{
-			size = 30;
+#if ANDROID || WINDOWS || IOS || MACCATALYST
+	// Use native MAUI clipboard when running as a MAUI app (Android, Windows, iOS, MacCatalyst).
+	await Clipboard.SetTextAsync(json);
+#else
+			// Fallback for browser/web: use navigator.clipboard via JS interop.
+			await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", json);
+			Logger.LogInformation("exported by fallback.");
+#endif
+			Logger.LogInformation("Exported JSON copied to clipboard.");
+			await OnExport.InvokeAsync(json);
 		}
-		if (minimal)
-			size *= 0.7;
-		return $"font-size: {size.ToString("F2", CultureInfo.InvariantCulture)}px";
+		catch (Exception ex)
+		{
+			Logger.LogError(ex, "Failed to copy exported JSON to clipboard using primary method.");
+			// Try the other approach as a best-effort fallback.
+			try
+			{
+				await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", json);
+				Logger.LogInformation("Fallback: exported JSON copied to clipboard via JS.");
+			}
+			catch (Exception jsEx)
+			{
+				Logger.LogError(jsEx, "Fallback copy to clipboard via JS also failed.");
+				await OnError.InvokeAsync("Failed to export Tierlist into the clipboard");
+			}
+		}
+		finally
+		{
+			await OnLoaded.InvokeAsync();
+		}
 	}
 
+	// ------------ ITEM & TIER SELECTION 
+	async Task Select(TierItem l)
+	{
+		await Select(l, l.parent.ogname);
+	}
+
+	async Task Select(TierItem i, string key)
+	{
+		//Logger.LogInformation($"Youre showcase is: Damn {showcase}");
+		if (mobile && showcase) return; // So they don't edit accidentally when scrolling
+		if (i == null || i == selecitem) return;
+
+		selecitem = i;
+		selecitemtier = key;
+		selectier = null;
+	}
+
+	void SelectTier(MouseEventArgs e, string tier)
+	{
+		Logger.LogInformation("Clicked tier " + tier);
+		Logger.LogInformation(e.Button.ToString());
+		if (e.Button == 2)
+		{
+			Logger.LogInformation("Registered tier " + tier);
+			selectier = selected.tiers[tier];
+			selecitem = null;
+			selecitemtier = "";
+		}
+	}
+
+	// ------------ ITEM FILTERING
 	bool InFilter(TierItem item)
 	{
 		if (string.IsNullOrWhiteSpace(filter) || filter == "[" || filter == "]" || filter == "+" || filter == "-" || filter == ",")
@@ -454,35 +519,7 @@
 		return tier.items.Where(x => InFilter(x)).ToList();
 	}
 
-	async Task Select(TierItem l)
-	{
-		await Select(l, l.parent.ogname);
-	}
-
-	async Task Select(TierItem i, string key)
-	{
-		//Logger.LogInformation($"Youre showcase is: Damn {showcase}");
-		if (mobile && showcase) return; // So they don't edit accidentally when scrolling
-		if (i == null || i == selecitem) return;
-
-		selecitem = i;
-		selecitemtier = key;
-		selectier = null;
-	}
-
-	void SelectTier(MouseEventArgs e, string tier)
-	{
-		Logger.LogInformation("Clicked tier " + tier);
-		Logger.LogInformation(e.Button.ToString());
-		if (e.Button == 2)
-		{
-			Logger.LogInformation("Registered tier " + tier);
-			selectier = selected.tiers[tier];
-			selecitem = null;
-			selecitemtier = "";
-		}
-	}
-
+	// ------------ UPDATING LAST MODIFIED
 	void UpdateModifiedItem()
 	{
 		if (selecitem != null)
@@ -514,6 +551,7 @@
 		await OnLoaded.InvokeAsync("Item Saved!");
 	}
 
+	// ------------ NEW ITEM & TIER
 	void Add(string key)
 	{
 		var defaultItemname = "NEW ITEM";
@@ -582,51 +620,7 @@
 
 	}
 
-	async Task Export()
-	{
-		await OnLoadingStart.InvokeAsync("Exporting Data to Clipboard...");
-		var json = TierLister.ExportJson(selected);
-		if (string.IsNullOrEmpty(json))
-		{
-			await OnError.InvokeAsync("Couldn't export tierlist: no JSON produced from TierService.tl.ExportJson()");
-			await OnLoaded.InvokeAsync();
-			return;
-		}
-
-		try
-		{
-			#if ANDROID || WINDOWS || IOS || MACCATALYST
-	// Use native MAUI clipboard when running as a MAUI app (Android, Windows, iOS, MacCatalyst).
-	await Clipboard.SetTextAsync(json);
-			#else
-			// Fallback for browser/web: use navigator.clipboard via JS interop.
-			await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", json);
-			Logger.LogInformation("exported by fallback.");
-			#endif
-			Logger.LogInformation("Exported JSON copied to clipboard.");
-			await OnExport.InvokeAsync(json);
-		}
-		catch (Exception ex)
-		{
-			Logger.LogError(ex, "Failed to copy exported JSON to clipboard using primary method.");
-			// Try the other approach as a best-effort fallback.
-			try
-			{
-				await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", json);
-				Logger.LogInformation("Fallback: exported JSON copied to clipboard via JS.");
-			}
-			catch (Exception jsEx)
-			{
-				Logger.LogError(jsEx, "Fallback copy to clipboard via JS also failed.");
-				await OnError.InvokeAsync("Failed to export Tierlist into the clipboard");
-			}
-		}
-		finally
-		{
-			await OnLoaded.InvokeAsync();
-		}
-	}
-
+	// ------------ ITEM DELETION
 	async Task Delete()
 	{
 		if (selecitem == null) return;
@@ -638,6 +632,13 @@
 		await TrySave();
 	}
 
+	public void Dispose()
+	{
+		selectier = null;
+		selecitem = null;
+	}
+
+	// ---------- DRAG FUNCTIONS
 	async Task StopDrag()
 	{
 		//Logger.LogInformation("Overtier: "+overtier);
@@ -770,7 +771,7 @@
 		);*/
 			//*/
 
-			if (DragDropApi<TierItem>.GetDragged() == null) return; // for async reasons
+		if (DragDropApi<TierItem>.GetDragged() == null) return; // for async reasons
 			if (!String.IsNullOrEmpty(overId)) {
 				if (!String.IsNullOrEmpty(overTierId))
 				{
@@ -820,7 +821,7 @@
 		finally {
 			handlingPointerMove = false;
 		}
-}
+	}
 
 	void OverTier(string tier)
 	{
@@ -842,11 +843,5 @@
 		overtier = Tier;
 		if (mobile) StopDrag();
 		StateHasChanged();
-	}
-
-	public void Dispose()
-	{
-		selectier = null;
-		selecitem = null;
 	}
 }

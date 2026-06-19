@@ -21,7 +21,7 @@
 				{
 					<div @key="@pair.Key" class="d-flex flex-wrap flex-md-nowrap my-2 py-2 px-4 me-sm-3 me-md-0" style="border: 2px solid; border-radius: 10px; border-color: @(pair.Value.color)!important;">
 						<div class="d-flex m-1 flex-column text-center justify-content-center mx-auto col-12 col-sm-3 py-1 py-sm-1 py-md-auto">
-							<input type="text" value="@pair.Value.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center flex-fill col-12 text-wrap text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Value.ogname)" placeholder="Tier Title" style="background-color: @pair.Value.color">
+							<input type="text" value="@pair.Value.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center flex-fill col-12 text-wrap" @onchange="(e) => ChangeTierName(e.Value?.ToString(), pair.Value.ogname)" placeholder="Tier Title" style="background-color: @pair.Value.color; color: @GlobalStyleFunctions.GetMostReadableTextColor(pair.Value.color)">
 						</div>
 						<div class="col-12 col-md-9 m-1 d-flex flex-row flex-fill">
 							@if (false) // TODO: the mudcolorpicker takes a while to loadon mobile, but input color is janky as well
@@ -93,6 +93,7 @@
 
 	bool mobile;
 
+	// ---------- GENERAL FUNCTIONS
 	protected override async Task OnInitializedAsync()
 	{
 		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
@@ -108,16 +109,24 @@
 		}
 	}
 
+	// ---------- YOU SURE MODAL TOGGLING
 	void Toggle(ref bool thing)
 	{
 		thing = !thing;
 	}
 
+	void YouSure()
+	{
+		yousure = !yousure;
+	}
+
+	// ---------- EXIT MODAL
 	async Task Exit()
 	{
 		await OnExit.InvokeAsync();
 	}
 
+	// ---------- CHANGING TIER NAME
 	async Task ChangeTierName(Tier tier)
 	{
 		await ChangeTierName(tier.name, tier.ogname);
@@ -163,6 +172,7 @@
 		Logger.LogInformation(h);
 	}
 
+	// ----------- REARENGING TIERS
 	async Task RearengeTier(string key, int direction)
 	{
 		if (direction == 0) return;
@@ -180,6 +190,7 @@
 		await OnLoaded.InvokeAsync("Tier Rearenged!");
 	}
 
+	// ----------- TIER DELETION
 	void Remove(string tier)
 	{
 		if (!yousure)
@@ -188,11 +199,6 @@
 		}
 		else ToBeDeletedTier = "";
 
-		yousure = !yousure;
-	}
-
-	void YouSure()
-	{
 		yousure = !yousure;
 	}
 

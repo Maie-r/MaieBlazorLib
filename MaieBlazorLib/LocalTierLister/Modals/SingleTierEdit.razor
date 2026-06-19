@@ -17,7 +17,7 @@
 				<a class="clickable" @onclick="Exit">✖</a>
 			</div>
 			<div class="d-flex flex-column text-center justify-content-center mx-auto col-sm-1 py-1 py-sm-1 py-md-auto">
-				<input type="text" value="@selectier.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center flex-fill col-12 text-wrap text-light" @onchange="(e) => ChangeTierName(e.Value?.ToString(), selectier.ogname)" placeholder="Tier Title" style="background-color: @selectier.color">
+				<input type="text" value="@selectier.name" class="rounded fs-2 py-md-auto py-1 m-0 text-center flex-fill col-12 text-wrap" @onchange="(e) => ChangeTierName(e.Value?.ToString(), selectier.ogname)" placeholder="Tier Title" style="background-color: @selectier.color ; color: @GlobalStyleFunctions.GetMostReadableTextColor(selectier.color)">
 			</div>
 			<MudColorPicker Label="Tier Color" @bind-Text="selectier.color" Style="@($"color: {selectier.color};")" Placeholder="Select Color" />
 			<button class="mx-2 text-danger" @onclick="YouSure">Remove</button>
@@ -71,6 +71,7 @@
 
 	bool mobile;
 
+	// ---------- GENERAL FUNCTIONS
 	protected override async Task OnInitializedAsync()
 	{
 		mobile = OperatingSystem.IsAndroid() || OperatingSystem.IsIOS();
@@ -86,16 +87,24 @@
 		}
 	}
 
+	// ---------- YOU SURE MODAL TOGGLING
+	void YouSure()
+	{
+		yousure = !yousure;
+	}
+
 	void Toggle(ref bool thing)
 	{
 		thing = !thing;
 	}
 
+	// ---------- EXITING MODAL
 	async Task Exit()
 	{
 		await OnExit.InvokeAsync();
 	}
 
+	// ---------- CHANGING TIER NAME
 	async Task ChangeTierName(Tier tier)
 	{
 		await ChangeTierName(tier.name, tier.ogname);
@@ -141,12 +150,8 @@
 		Logger.LogInformation(h);
 	}
 
+	// ---------- TIER DELETION
 	void Remove(string tier)
-	{
-		yousure = !yousure;
-	}
-
-	void YouSure()
 	{
 		yousure = !yousure;
 	}
