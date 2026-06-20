@@ -38,7 +38,7 @@ namespace MaieBlazorLib.LocalTierLister
             return luminance > Lumithreshold ? "#000000" : "#FFFFFF";
         }
 
-        public static string GetTierFontSize(string name, double multiplier)
+        public static string GetTierFontSize(string name, double multiplier, bool allowbreak)
         {
             double size;
             if (name.Length > 6)
@@ -49,8 +49,17 @@ namespace MaieBlazorLib.LocalTierLister
             {
                 size = 30;
             }
+            var extra = allowbreak ? "; word-break: break-all;" : "";
             size *= multiplier;
-            return $"font-size: {size.ToString("F2", CultureInfo.InvariantCulture)}px";
+            return $"font-size: {size.ToString("F2", CultureInfo.InvariantCulture)}px {extra}";
+        }
+
+        public static string GetItemFontSize(string name, double multiplier, bool allowbreak)
+        {
+            double size;
+            size = (1 - (((double)name.Length + 60) / (name.Length + 95))) * 50;
+            size *= multiplier;
+            return $"font-size: {size.ToString("F2", CultureInfo.InvariantCulture)}px{(allowbreak ? "; text-overflow: ellipsis" : "; text-overflow: ellipsis")}";
         }
     }
 }

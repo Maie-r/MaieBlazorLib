@@ -28,7 +28,7 @@
 		   style="touch-action: none!important; @(DragDropApi<TierItem>.GetOver() == item ? "pointer-events: none" : "");">
 		@if (String.IsNullOrEmpty(ImageUsed) || NoImage || imageFailed)
 		{
-			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") unselectable rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
+			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") unselectable rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)!; white-space: nowrap; overflow: hidden;">@item.name</p>
 		}
 		else
 		{
@@ -42,7 +42,7 @@ else
 	<a class="clickable draggable" draggable="true" @ondragover="OverHere" @ondragleave="OuttaHere" @onmousedown="(e) => StartDrag(e)" @ondragend="StopDrag">
 		@if (String.IsNullOrEmpty(ImageUsed) || NoImage || imageFailed)
 		{
-			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)">@item.name</p>
+			<p class="@(isminimal ? "tieritemsmall" : "tieritem") @(OverStyle ? "OverItem" : "") rounded d-flex flex-column flex-fill flex-shrink-1 justify-content-center m-1 text-wrap text-center" style="@GetFontSize(item.name)!; white-space: nowrap; overflow: hidden;">@item.name</p>
 		}
 		else
 		{
@@ -174,18 +174,7 @@ else
 
 	string GetFontSize(string name)
 	{
-		double size;
-		if (true)//(name.Length > 12)
-		{
-			size = (1 - (((double)name.Length + 50) / (name.Length + 100))) * 50;
-		}
-		else
-		{
-			size = 27;
-		}
-		if (isminimal)
-			size *= 0.7;
-		return $"font-size: {size.ToString("F2", CultureInfo.InvariantCulture)}px";
+		return GlobalStyleFunctions.GetItemFontSize(name, isminimal ? 0.7 : 1, mobile);
 	}
 
 	async Task StartDrag(MouseEventArgs e) // Draggin'
