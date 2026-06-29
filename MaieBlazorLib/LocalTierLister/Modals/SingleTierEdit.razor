@@ -10,7 +10,7 @@
 
 <div style="overflow: hidden">
 	<div class="maiedal align-content-center">
-		<div class="d-flex p-1 p-md-2 col-12 col-md-6 darken-85 flex-column mx-auto my-auto shadow" style="border-radius: 1vw">
+		<div class="d-flex p-1 p-md-2 col-12 col-md-6 darken-85 bgblur-5 flex-column mx-auto my-auto shadow" style="border-radius: 1vw">
 			<div class="d-flex p-2 text-end justify-content-end">
 				<a class="clickable" @onclick="Exit">✖</a>
 			</div>
@@ -24,7 +24,7 @@
 	@if (yousure)
 	{
 		<div class="maiedal d-flex flex-column text-center align-items-center align-content-center justify-content-center">
-			<div class="p-2 p-md-4 darken-85 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-5 border-2 border-light shadow">
+			<div class="p-2 p-md-4 darken-85 bgblur-5 d-flex rounded text-center flex-column justify-content-center mx-auto text-light col-5 border-2 border-light shadow">
 				<h5> Are you sure you want to permanently remove this tier? All items will be deleted with it!</h5>
 				<div class="d-flex flex-row flex-wrap mx-auto">
 					<button class="mx-2 text-light" @onclick="YouSure">No</button>
